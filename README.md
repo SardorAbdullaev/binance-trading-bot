@@ -1,28 +1,8 @@
 # Binance Trading Bot
 
-[![GitHub version](https://img.shields.io/github/package-json/v/chrisleekr/binance-trading-bot)](https://github.com/chrisleekr/binance-trading-bot/releases)
-[![Build](https://github.com/chrisleekr/binance-trading-bot/workflows/Push/badge.svg)](https://github.com/chrisleekr/binance-trading-bot/actions?query=workflow%3APush)
-[![CodeCov](https://codecov.io/gh/chrisleekr/binance-trading-bot/branch/master/graph/badge.svg)](https://codecov.io/gh/chrisleekr/binance-trading-bot)
-[![Docker pull](https://img.shields.io/docker/pulls/chrisleekr/binance-trading-bot)](https://hub.docker.com/r/chrisleekr/binance-trading-bot)
-[![GitHub contributors](https://img.shields.io/github/contributors/chrisleekr/binance-trading-bot)](https://github.com/chrisleekr/binance-trading-bot/graphs/contributors)
-[![MIT License](https://img.shields.io/github/license/chrisleekr/binance-trading-bot)](https://github.com/chrisleekr/binance-trading-bot/blob/master/LICENSE)
-
 > Automated Binance trading bot with trailing buy/sell strategy
 
 ---
-
-[![ko](https://img.shields.io/badge/lang-한국어-brightgreen.svg)](https://github.com/chrisleekr/binance-trading-bot/blob/master/README.ko.md)
-[![中文](https://img.shields.io/badge/lang-中文-blue.svg)](https://github.com/chrisleekr/binance-trading-bot/blob/master/README.zh-cn.md)
-
-This is a test project. I am just testing my code.
-
-## Warnings
-
-**I cannot guarantee whether you can make money or not.**
-
-**So use it at your own risk! I have no responsibility for any loss or hardship
-incurred directly or indirectly by using this code. Read
-[disclaimer](#disclaimer) before using this code.**
 
 **Before updating the bot, make sure to record the last buy price in the note. It may lose the configuration or last buy price records.**
 
@@ -369,20 +349,6 @@ to view the past changes.
 - [ ] Non linear stop price and chase function - [#246](https://github.com/chrisleekr/binance-trading-bot/issues/246)
 - [ ] Support STOP-LOSS configuration per grid trade for selling - [#261](https://github.com/chrisleekr/binance-trading-bot/issues/261)
 
-## Donations
-
-If you find this project helpful, feel free to make a small
-[donation](https://github.com/chrisleekr/binance-trading-bot/blob/master/DONATIONS.md)
-to the developer.
-
-## Acknowledgments
-
-- [@d0x2f](https://github.com/d0x2f)
-- And many others! Thanks guys!
-
-## Contributors
-
-Thanks to all contributors :heart: [Click to see our heroes](https://github.com/chrisleekr/binance-trading-bot/graphs/contributors)
 
 ## Disclaimer
 

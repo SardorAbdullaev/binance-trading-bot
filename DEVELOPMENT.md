@@ -29,7 +29,6 @@ docker-compose down
 ```
 
 ## Branch naming conventions
-
 The project enforces the branch name.
 
 ```text

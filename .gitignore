@@ -29,7 +29,11 @@ log
 .env
 .vs
 
-
 /public/dist/*
 !/public/dist/.gitkeep
-
+mongo_data
+clouddeployment/my_aws_secret_key
+*.pem
+*/.terraform
+*/.terraform*
+*/terraform*
