@@ -6,8 +6,8 @@ services:
     networks:
       - ingress
     volumes:
-      - '/data/binance/redis:/data/redis'
-      - '/data/binance/redis/redis.conf:/usr/local/etc/redis/redis.conf'
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     deploy:
       mode: global
     ports:
@@ -19,7 +19,7 @@ services:
     networks:
       - ingress
     volumes:
-      - '/data/binance/db:/data/db'
+      - mongo_data:/data/db
     deploy:
       mode: global
     ports:
@@ -60,17 +60,17 @@ services:
       BINANCE_LIVE_SECRET_KEY: ''
       BINANCE_TEST_API_KEY: ''
       BINANCE_TEST_SECRET_KEY: ''
-      BINANCE_MODE: 'live'
+      BINANCE_MODE: 'test'
       BINANCE_TZ: 'Europe/Berlin'
       BINANCE_SLACK_ENABLED: 'false'
       BINANCE_JOBS_ALIVE_ENABLED: 'true'
       BINANCE_JOBS_TRAILING_TRADE_ENABLED: 'true'
       BINANCE_JOBS_TRAILING_TRADE_SYMBOLS:
-        '["BTCEUR", "BNBBTC", "BNBEUR", "ETHBTC", "XRPBTC"]'
+        '["BTCUSDT", "BNBUSDT", "BNBUSDT", "ETHUSDT", "XRPUSDT"]'
       BINANCE_MONGO_HOST: 'binance-mongo'
       BINANCE_MONGO_PORT: 27017
       BINANCE_MONGO_DATABASE: 'binance-bot'
-      BINANCE_LOCAL_TUNNEL_ENABLED: 'false'
+      BINANCE_LOCAL_TUNNEL_ENABLED: 'true'
       REDIS_HOST: 'binance-redis'
       REDIS_PORT: 6379
       REDIS_PASSWORD:
@@ -85,14 +85,9 @@ services:
 
 networks:
   ingress:
-    driver: bridge
-    attachable: true
-  kern-frontend:
-    driver: bridge
+    driver: overlay
     attachable: true
 
 volumes:
   redis_data:
-    external: true
   mongo_data:
-    external: true
