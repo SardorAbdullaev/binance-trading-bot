@@ -45,28 +45,10 @@ resource "aws_security_group" "securitygroup" {
     to_port     = 65535
     protocol    = "tcp"
   }
-  egress {
-    cidr_blocks = ["172.31.0.0/24"]
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-  }
-  egress {
-    cidr_blocks = ["172.31.1.0/24"]
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-  }
   ingress {
     cidr_blocks = ["172.31.0.0/16"]
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-  }
-  egress {
-    cidr_blocks = ["172.31.0.0/16"]
-    from_port   = 8080
-    to_port     = 8080
     protocol    = "tcp"
   }
   ingress {
@@ -76,7 +58,7 @@ resource "aws_security_group" "securitygroup" {
     protocol    = "tcp"
   }
   egress {
-    cidr_blocks = ["172.31.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
