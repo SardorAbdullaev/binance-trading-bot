@@ -13,6 +13,7 @@ provider "aws" {
 }
 
 resource "aws_vpc" "vpc" {
+  cidr_block = var.cidr
   tags = {
     Name        = "${var.app_name}-vpc"
     Environment = var.app_environment
