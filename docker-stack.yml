@@ -51,6 +51,18 @@ services:
     deploy:
       replicas: 1
 
+  tradingview:
+    image: chrisleekr/binance-trading-bot:tradingview-0.0.85
+    networks:
+      - ingress
+    restart: unless-stopped
+    ports:
+      - 8083:8080
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '50m'
+
   binance-bot:
     image: chrisleekr/binance-trading-bot:0.0.85
     networks:
