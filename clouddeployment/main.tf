@@ -62,9 +62,9 @@ resource "aws_instance" "ec2jumphost" {
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
   hibernation             = false
-  root_block_device {
-    volume_size = 1
-  }
+#  root_block_device {
+#    volume_size = 1
+#  }
   tags = {
     "Name" = "${var.app_name}-jumphost"
   }

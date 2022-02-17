@@ -65,6 +65,8 @@ services:
       driver: 'json-file'
       options:
         max-size: '50m'
+    deploy:
+      replicas: 1
 
   binance-bot:
     image: chrisleekr/binance-trading-bot:0.0.85

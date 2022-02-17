@@ -40,6 +40,18 @@ resource "aws_security_group" "securitygroup" {
     protocol    = "tcp"
   }
   ingress {
+    cidr_blocks = var.private_subnets
+    from_port   = 7946
+    to_port     = 7946
+    protocol    = "udp"
+  }
+  ingress {
+    cidr_blocks = var.private_subnets
+    from_port   = 4789
+    to_port     = 4789
+    protocol    = "udp"
+  }
+  ingress {
     cidr_blocks = [var.cidr]
     from_port   = 80
     to_port     = 80
