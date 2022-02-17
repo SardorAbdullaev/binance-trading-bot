@@ -14,7 +14,7 @@ provider "aws" {
 
 resource "aws_vpc" "vpc" {
   cidr_block = var.cidr
-  tags = {
+  tags       = {
     Name        = "${var.app_name}-vpc"
     Environment = var.app_environment
   }
@@ -61,9 +61,11 @@ resource "aws_instance" "ec2jumphost" {
   security_groups         = [aws_security_group.ssh_securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
-  ebs_optimized           = false
   hibernation             = false
-  tags                    = {
+  root_block_device {
+    volume_size = 1
+  }
+  tags = {
     "Name" = "${var.app_name}-jumphost"
   }
   credit_specification {
