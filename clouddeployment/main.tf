@@ -20,26 +20,9 @@ resource "aws_vpc" "vpc" {
   }
 }
 
-resource "aws_instance" "app_server" {
-  ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.micro"
-  subnet_id               = aws_subnet.private[0].id
-  security_groups         = [aws_security_group.securitygroup.name]
-  key_name                = aws_key_pair.ssh.key_name
-  disable_api_termination = false
-  ebs_optimized           = false
-  hibernation             = false
-  tags                    = {
-    "Name" = var.app_name
-  }
-  credit_specification {
-    cpu_credits = "unlimited"
-  }
-}
-
 resource "aws_instance" "app_node" {
   ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.micro"
+  instance_type           = "t2.small"
   subnet_id               = aws_subnet.private[0].id
   security_groups         = [aws_security_group.securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
