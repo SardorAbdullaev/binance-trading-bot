@@ -14,6 +14,8 @@ services:
       - logs_vol:/app/logs
       - ./config/apprise_layer_1.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
+    deploy:
+      replicas: 1
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -23,6 +25,8 @@ services:
       - ingress
     container_name: binance_trader_api
     working_dir: /app
+    deploy:
+      replicas: 1
     volumes:
       - ./user_layer_1.cfg:/app/user.cfg
       - data_vol:/app/data
@@ -36,6 +40,8 @@ services:
   sqlitebrowser:
     image: ghcr.io/linuxserver/sqlitebrowser
     container_name: sqlitebrowser
+    deploy:
+      replicas: 1
     networks:
       - ingress
     environment:
@@ -43,7 +49,7 @@ services:
       - PGID=1000
       - TZ=Europe/Berlin
     volumes:
-      - data_config_vol/config
+      - data_config_vol:/config
       - data_vol:/data
     ports:
       - 3000:3000
