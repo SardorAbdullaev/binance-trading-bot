@@ -43,7 +43,7 @@ services:
       - PGID=1000
       - TZ=Europe/Berlin
     volumes:
-      - data_config_vol/config
+      - data_config_vol:/config
       - data_vol:/data
     ports:
       - 3000:3000
