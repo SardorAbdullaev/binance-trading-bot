@@ -32,7 +32,7 @@ services:
       - data_vol:/app/data
       - logs_vol:/app/logs
     ports:
-      - 5123:5123
+      - 15123:5123
     command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
     depends_on:
       - crypto-trading
@@ -52,7 +52,7 @@ services:
       - data_config_vol:/config
       - data_vol:/data
     ports:
-      - 3000:3000
+      - 13000:3000
 
 networks:
   ingress:
