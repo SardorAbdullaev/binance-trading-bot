@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   crypto-trading:
-    image: edeng23/binance-trade-bot
+    image: sardorabdullaev/binance-trend-trade-bot
     networks:
       - ingress
     container_name: binance_trader
@@ -20,7 +20,7 @@ services:
       - PYTHONUNBUFFERED=1
 
   api:
-    image: edeng23/binance-trade-bot
+    image: sardorabdullaev/binance-trend-trade-bot
     networks:
       - ingress
     container_name: binance_trader_api

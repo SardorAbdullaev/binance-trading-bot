@@ -8,12 +8,14 @@ services:
     container_name: binance_trader
     working_dir: /app
     volumes:
-      - ./user.cfg:/app/user.cfg
-      - ./supported_coin_list:/app/supported_coin_list
+      - ./user_non_volatile.cfg:/app/user.cfg
+      - ./supported_coin_list_non_volatile:/app/supported_coin_list
       - data_vol:/app/data
       - logs_vol:/app/logs
-      - ./config/apprise.yml:/app/config/apprise.yml
+      - ./config/apprise_non_volatile.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
+    deploy:
+      replicas: 1
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -23,12 +25,14 @@ services:
       - ingress
     container_name: binance_trader_api
     working_dir: /app
+    deploy:
+      replicas: 1
     volumes:
-      - ./user.cfg:/app/user.cfg
+      - ./user_non_volatile.cfg:/app/user.cfg
       - data_vol:/app/data
       - logs_vol:/app/logs
     ports:
-      - 5123:5123
+      - 25123:5123
     command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
     depends_on:
       - crypto-trading
@@ -36,6 +40,8 @@ services:
   sqlitebrowser:
     image: ghcr.io/linuxserver/sqlitebrowser
     container_name: sqlitebrowser
+    deploy:
+      replicas: 1
     networks:
       - ingress
     environment:
@@ -46,7 +52,7 @@ services:
       - data_config_vol:/config
       - data_vol:/data
     ports:
-      - 3000:3000
+      - 23000:3000
 
 networks:
   ingress:
