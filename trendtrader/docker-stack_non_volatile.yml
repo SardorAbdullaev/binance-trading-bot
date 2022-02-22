@@ -9,8 +9,8 @@ services:
     volumes:
       - ./user_non_volatile.cfg:/app/user.cfg
       - ./supported_coin_list_non_volatile:/app/supported_coin_list
-      - data_vol:/app/data
-      - logs_vol:/app/logs
+      - data:/app/data
+      - logs:/app/logs
       - ./config/apprise_non_volatile.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
     deploy:
@@ -29,8 +29,8 @@ services:
       replicas: 1
     volumes:
       - ./user_non_volatile.cfg:/app/user.cfg
-      - data_vol:/app/data
-      - logs_vol:/app/logs
+      - data:/app/data
+      - logs:/app/logs
     ports:
       - 25123:5123
     command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
@@ -48,8 +48,8 @@ services:
       - PGID=1000
       - TZ=Europe/Berlin
     volumes:
-      - data_config_vol:/config
-      - data_vol:/data
+      - data_config:/config
+      - data:/data
     ports:
       - 23000:3000
 
