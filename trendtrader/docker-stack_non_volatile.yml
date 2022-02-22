@@ -37,21 +37,21 @@ services:
     depends_on:
       - crypto-trading
 
-  sqlitebrowser:
-    image: ghcr.io/linuxserver/sqlitebrowser
-    deploy:
-      mode: global
-    networks:
-      - ingress
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Berlin
-    volumes:
-      - data_config:/config
-      - data:/data
-    ports:
-      - 23000:3000
+#  sqlitebrowser:
+#    image: ghcr.io/linuxserver/sqlitebrowser
+#    deploy:
+#      mode: global
+#    networks:
+#      - ingress
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Europe/Berlin
+#    volumes:
+#      - data_config:/config
+#      - data:/data
+#    ports:
+#      - 23000:3000
 
 networks:
   ingress:
