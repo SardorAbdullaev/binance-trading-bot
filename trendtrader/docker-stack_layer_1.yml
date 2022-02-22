@@ -43,8 +43,7 @@ services:
     image: ghcr.io/linuxserver/sqlitebrowser
     container_name: sqlitebrowser
     deploy:
-      mode: replicated
-      replicas: 1
+      mode: global
     networks:
       - ingress
     environment:

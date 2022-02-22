@@ -52,8 +52,7 @@ services:
       - data_config_vol:/config
       - data_vol:/data
     deploy:
-      mode: replicated
-      replicas: 1
+      mode: global
     ports:
       - 3000:3000
 
