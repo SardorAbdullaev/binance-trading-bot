@@ -14,6 +14,11 @@ services:
       - logs_vol:/app/logs
       - ./config/apprise.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -30,6 +35,11 @@ services:
     ports:
       - 5123:5123
     command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     depends_on:
       - crypto-trading
 
@@ -45,6 +55,11 @@ services:
     volumes:
       - data_config_vol:/config
       - data_vol:/data
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     ports:
       - 3000:3000
 

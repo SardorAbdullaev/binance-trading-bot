@@ -15,7 +15,10 @@ services:
       - ./config/apprise_non_volatile.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
     deploy:
+      mode: replicated
       replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -26,7 +29,10 @@ services:
     container_name: binance_trader_api
     working_dir: /app
     deploy:
+      mode: replicated
       replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     volumes:
       - ./user_non_volatile.cfg:/app/user.cfg
       - data_vol:/app/data
@@ -41,7 +47,10 @@ services:
     image: ghcr.io/linuxserver/sqlitebrowser
     container_name: sqlitebrowser
     deploy:
+      mode: replicated
       replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
     networks:
       - ingress
     environment:
