@@ -5,7 +5,6 @@ services:
     image: sardorabdullaev/binance-trend-trade-bot
     networks:
       - ingress
-    container_name: binance_trader
     working_dir: /app
     volumes:
       - ./user_non_volatile.cfg:/app/user.cfg
@@ -24,7 +23,6 @@ services:
     image: sardorabdullaev/binance-trend-trade-bot
     networks:
       - ingress
-    container_name: binance_trader_api
     working_dir: /app
     deploy:
       mode: replicated
@@ -41,7 +39,6 @@ services:
 
   sqlitebrowser:
     image: ghcr.io/linuxserver/sqlitebrowser
-    container_name: sqlitebrowser
     deploy:
       mode: global
     networks:
@@ -62,6 +59,6 @@ networks:
     attachable: true
 
 volumes:
-  data_vol:
-  data_config_vol:
-  logs_vol:
+  data:
+  data_config:
+  logs:
