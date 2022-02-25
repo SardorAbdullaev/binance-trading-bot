@@ -16,6 +16,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      placement:
+        constraints:
+          - node.labels.ebsattached!=1
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -34,6 +37,9 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      placement:
+        constraints:
+          - node.labels.ebsattached!=1
     depends_on:
       - crypto-trading
 
