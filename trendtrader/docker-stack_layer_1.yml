@@ -18,7 +18,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.ebsattached!=1
+          - node.labels.ebsattached==0
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -32,7 +32,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.ebsattached!=1
+          - node.labels.ebsattached==0
     volumes:
       - ./user_layer_1.cfg:/app/user.cfg
       - data_vol:/app/data
