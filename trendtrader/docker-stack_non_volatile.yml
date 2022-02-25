@@ -18,7 +18,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: 120M
+          memory: 100M
       restart_policy:
         condition: on-failure
       replicas: 1
@@ -36,7 +36,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: 120M
+          memory: 100M
       restart_policy:
         condition: on-failure
     volumes:
