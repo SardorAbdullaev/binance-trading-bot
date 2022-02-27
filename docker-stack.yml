@@ -80,7 +80,7 @@ services:
         condition: on-failure
 
   tradingview:
-    image: chrisleekr/binance-trading-bot:tradingview-0.0.85
+    image: sardorabdullaev/binance-trailing-trade-bot:tradingview
     networks:
       - ingress
     restart: unless-stopped
@@ -94,7 +94,7 @@ services:
       replicas: 1
 
   binance-bot:
-    image: chrisleekr/binance-trading-bot:0.0.85
+    image: sardorabdullaev/binance-trailing-trade-bot:0.0.85
     networks:
       - ingress
     environment:
@@ -102,13 +102,11 @@ services:
       BINANCE_LIVE_SECRET_KEY: ''
       BINANCE_TEST_API_KEY: ''
       BINANCE_TEST_SECRET_KEY: ''
-      BINANCE_MODE: 'test'
+      BINANCE_MODE: 'live'
       BINANCE_TZ: 'Europe/Berlin'
       BINANCE_SLACK_ENABLED: 'false'
       BINANCE_JOBS_ALIVE_ENABLED: 'true'
       BINANCE_JOBS_TRAILING_TRADE_ENABLED: 'true'
-      BINANCE_JOBS_TRAILING_TRADE_SYMBOLS:
-        '["BTCUSDT", "BNBUSDT", "BNBUSDT", "ETHUSDT", "XRPUSDT"]'
       BINANCE_MONGO_HOST: 'binance-mongo'
       BINANCE_MONGO_PORT: 27017
       BINANCE_MONGO_DATABASE: 'binance-bot'
