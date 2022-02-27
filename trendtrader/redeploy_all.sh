@@ -14,6 +14,6 @@ for i in supported_coin_list*; do
     rm -f *.bak
 #    sed -i.bak 's/user.cfg:/'${cfg}':/g' $docker_file_name
 #    rm -f *.bak
-    docker stack deploy --compose-file $docker_file_name $suffix
+    docker stack deploy --compose-file $docker_file_name ${i/supported_coin_list_/}
 done
 
