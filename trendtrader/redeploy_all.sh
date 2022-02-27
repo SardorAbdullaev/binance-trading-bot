@@ -6,7 +6,7 @@ for i in supported_coin_list*; do
     apprise=apprise${suffix}.yml
     cfg=user${suffix}.cfg
     cp docker-stack.yml $docker_file_name
-    cp config/apprise.yml config/${apprise}
+#    cp config/apprise.yml config/${apprise}
 #    cp .user.cfg.example $cfg
     sed -i.bak 's/supported_coin_list:/'${i}':/g' $docker_file_name
     rm -f *.bak
