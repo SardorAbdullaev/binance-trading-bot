@@ -13,7 +13,35 @@ sh = logging.StreamHandler(sys.stdout)
 sh.setFormatter(colorlog.ColoredFormatter(
     '%(log_color)s [%(asctime)s] %(levelname)s [%(filename)s.%(funcName)s:%(lineno)d] %(message)s', datefmt='%a, %d %b %Y %H:%M:%S'))
 logger.addHandler(sh)
+os_metrics = ["RSI", "STOCH.K", "ADX", "Mom", "MACD", "Stoch.RSI", "W%R", "BBP"]
+moving_average_metrics = ["EMA10","SMA10","EMA50","SMA50","EMA200","SMA200","Ichimoku","VWMA","HullMA"]
 
+def modify_summary(result):
+    for symbol,r in result.items():
+        interim_summary = {
+            "NEUTRAL": 0,
+            "SELL": 0,
+            "BUY": 0
+        }
+        for name,decision in r["oscillators"]['COMPUTE'].items():
+            if name in os_metrics:
+                interim_summary[decision] += 1
+
+        for name,decision in r["moving_averages"]['COMPUTE'].items():
+            if name in moving_average_metrics:
+                interim_summary[decision] += 1
+
+        if interim_summary["NEUTRAL"] >= interim_summary["SELL"]:
+            if interim_summary["NEUTRAL"] > interim_summary["BUY"]:
+                interim_summary["RECOMMENDATION"] = "NEUTRAL"
+            else:
+                interim_summary["RECOMMENDATION"] = "BUY"
+        else:
+            if interim_summary["SELL"] > interim_summary["BUY"]:
+                interim_summary["RECOMMENDATION"] = "SELL"
+            else:
+                interim_summary["RECOMMENDATION"] = "BUY"
+        r["summary"] = interim_summary
 
 @app.route('/', methods=['GET'])
 def index():
