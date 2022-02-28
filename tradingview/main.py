@@ -63,7 +63,7 @@ def index():
         else:
             result[symbol] = {}
         # logger.info('Processed '+symbol)
-
+    modify_summary(result)
     response = {
         'request': {
             'symbols': symbols,
