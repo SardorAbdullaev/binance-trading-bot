@@ -97,8 +97,8 @@
         },
         "orderLimit": {
           "enabled": true,
-          "maxBuyOpenOrders": 3,
-          "maxOpenTrades": 15
+          "maxBuyOpenOrders": 4,
+          "maxOpenTrades": 7
         },
         "tradingView": {
           "interval": "1d",
