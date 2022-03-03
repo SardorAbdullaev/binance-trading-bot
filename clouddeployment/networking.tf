@@ -7,7 +7,7 @@ resource "aws_eip" "jumphost" {
 }
 
 resource "aws_eip" "nat_gateway" {
-  count = length(var.public_subnets)
+  count = 1
   vpc   = true
   tags  = {
     "Name" = "${var.app_name}-nat-${count.index}"
@@ -70,16 +70,16 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_nat_gateway" "nat_gateway" {
   allocation_id = element(aws_eip.nat_gateway.*.id, count.index)
-  count         = length(var.public_subnets)
+  count         = 1
   subnet_id     = element(aws_subnet.public.*.id, count.index)
   tags          = {
-    "Name" = var.app_name
+    "Name" = "${var.app_name}-nat-${count.index}"
   }
 }
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.vpc.id
-  count  = length(var.public_subnets)
+  count  = 1
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = element(aws_nat_gateway.nat_gateway.*.id, count.index)
@@ -90,7 +90,7 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private" {
-  count          = length(var.private_subnets)
+  count          = 1
   subnet_id      = element(aws_subnet.private.*.id, count.index)
   route_table_id = element(aws_route_table.private.*.id, count.index)
 }

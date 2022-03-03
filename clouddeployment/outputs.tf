@@ -15,10 +15,6 @@ output "nat_gateway_ip" {
   value = aws_eip.nat_gateway[0].public_ip
 }
 
-output "nat_gateway_ip_2" {
-  value = aws_eip.nat_gateway[1].public_ip
-}
-
 output "jumphost_ip" {
   value = aws_eip.jumphost.public_ip
 }
