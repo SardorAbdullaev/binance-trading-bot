@@ -39,9 +39,9 @@ resource "aws_instance" "app_node" {
 
 resource "aws_instance" "trend_trader" {
   ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.nano"
+  instance_type           = "t2.micro"
   subnet_id               = aws_subnet.private[0].id
-  security_groups         = [aws_security_group.securitygroup.id]
+  security_groups         = [aws_security_group.securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   tags                    = {
     "Name" = var.app_name
