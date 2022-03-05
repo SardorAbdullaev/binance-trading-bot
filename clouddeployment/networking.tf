@@ -6,21 +6,12 @@ resource "aws_eip" "jumphost" {
   }
 }
 
-resource "aws_eip" "nat_gateway" {
-  count = 1
-  vpc   = true
-  tags  = {
-    "Name" = "${var.app_name}-nat-${count.index}"
-  }
-}
-
 resource "aws_internet_gateway" "aws-igw" {
   vpc_id = aws_vpc.vpc.id
   tags   = {
     Name        = "${var.app_name}-igw"
     Environment = var.app_environment
   }
-
 }
 
 resource "aws_subnet" "private" {
@@ -68,21 +59,11 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_nat_gateway" "nat_gateway" {
-  allocation_id = element(aws_eip.nat_gateway.*.id, count.index)
-  count         = 1
-  subnet_id     = element(aws_subnet.public.*.id, count.index)
-  tags          = {
-    "Name" = "${var.app_name}-nat-${count.index}"
-  }
-}
-
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.vpc.id
-  count  = 1
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = element(aws_nat_gateway.nat_gateway.*.id, count.index)
+    network_interface_id = aws_instance.ec2nat.primary_network_interface_id
   }
   tags = {
     "Name" = "${var.app_name}-routing-table-private"
@@ -90,7 +71,6 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private" {
-  count          = 1
-  subnet_id      = element(aws_subnet.private.*.id, count.index)
-  route_table_id = element(aws_route_table.private.*.id, count.index)
+  subnet_id      = aws_subnet.private[0].id
+  route_table_id = aws_route_table.private.id
 }

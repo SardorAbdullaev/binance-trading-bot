@@ -38,12 +38,12 @@ resource "aws_instance" "app_node" {
 }
 
 resource "aws_instance" "trend_trader" {
-  ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.micro"
-  subnet_id               = aws_subnet.private[0].id
-  security_groups         = [aws_security_group.securitygroup.name]
-  key_name                = aws_key_pair.ssh.key_name
-  tags                    = {
+  ami             = "ami-00bf0e20ed7ea8cdc"
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.private[0].id
+  security_groups = [aws_security_group.securitygroup.name]
+  key_name        = aws_key_pair.ssh.key_name
+  tags            = {
     "Name" = var.app_name
   }
   hibernation = false
@@ -61,11 +61,25 @@ resource "aws_instance" "ec2jumphost" {
   disable_api_termination = false
   hibernation             = false
   # Change ami before decreasing the volume
-#  root_block_device {
-#    volume_size = 1
-#  }
-  tags = {
+  #  root_block_device {
+  #    volume_size = 1
+  #  }
+  tags                    = {
     "Name" = "${var.app_name}-jumphost"
+  }
+  credit_specification {
+    cpu_credits = "standard"
+  }
+}
+resource "aws_instance" "ec2nat" {
+  instance_type               = "t2.nano"
+  ami                         = "ami-003acd4f8da7e06f9"
+  subnet_id                   = aws_subnet.public[0].id
+  security_groups             = [aws_security_group.nat_securitygroup.name]
+  associate_public_ip_address = true
+  source_dest_check           = false
+  tags                        = {
+    "Name" = "${var.app_name}-nat-instance"
   }
   credit_specification {
     cpu_credits = "standard"

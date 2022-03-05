@@ -29,6 +29,33 @@ resource "aws_security_group" "ssh_securitygroup" {
   }
 }
 
+resource "aws_security_group" "nat_securitygroup" {
+  name        = "natSecurityGroup"
+  description = "natSecurityGroup"
+  vpc_id      = aws_vpc.vpc.id
+  ingress {
+    cidr_blocks = var.private_subnets
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+  }
+  ingress {
+    cidr_blocks = var.private_subnets
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+  }
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+  }
+  tags = {
+    "Name" = "natSecurityGroup"
+  }
+}
+
 resource "aws_security_group" "securitygroup" {
   name        = "privateSecurityGroup"
   description = "privateSecurityGroup"
