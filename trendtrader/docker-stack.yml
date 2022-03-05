@@ -9,7 +9,7 @@ services:
     volumes:
       - ./user.cfg:/app/user.cfg
       - ./supported_coin_list:/app/supported_coin_list
-      - data_vol:/app/data
+      - ./data:/app/data
       - logs_vol:/app/logs
       - ./config/apprise.yml:/app/config/apprise.yml
     command: python -m binance_trade_bot
@@ -69,6 +69,4 @@ networks:
     attachable: true
 
 volumes:
-  data_vol:
-  data_config_vol:
   logs_vol:
