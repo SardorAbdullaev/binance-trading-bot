@@ -25,27 +25,27 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
-  api:
-    image: sardorabdullaev/binance-trend-trade-bot
-    networks:
-      - ingress
-    working_dir: /app
-    volumes:
-      - ./user.cfg:/app/user.cfg
-      - data_vol:/app/data
-      - logs_vol:/app/logs
-    command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
-    deploy:
-      mode: replicated
-      replicas: 1
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 105M
-      restart_policy:
-        condition: on-failure
-    depends_on:
-      - crypto-trading
+#  api:
+#    image: sardorabdullaev/binance-trend-trade-bot
+#    networks:
+#      - ingress
+#    working_dir: /app
+#    volumes:
+#      - ./user.cfg:/app/user.cfg
+#      - data_vol:/app/data
+#      - logs_vol:/app/logs
+#    command: gunicorn binance_trade_bot.api_server:app -k eventlet -w 1 --threads 1 -b 0.0.0.0:5123
+#    deploy:
+#      mode: replicated
+#      replicas: 1
+#      resources:
+#        limits:
+#          cpus: "0.2"
+#          memory: 105M
+#      restart_policy:
+#        condition: on-failure
+#    depends_on:
+#      - crypto-trading
 
 #  sqlitebrowser:
 #    image: ghcr.io/linuxserver/sqlitebrowser
