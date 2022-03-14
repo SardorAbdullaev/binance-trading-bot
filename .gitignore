@@ -7,7 +7,7 @@ node_modules
 .env.local
 .env.*.local
 trendtrader/*.cfg
-trendtrader/config/*
+trendtrader/config/*_*.yml
 
 # Log files
 npm-debug.log*
