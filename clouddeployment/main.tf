@@ -21,10 +21,10 @@ resource "aws_vpc" "vpc" {
 }
 
 resource "aws_instance" "app_node" {
-  ami                     = "ami-00bf0e20ed7ea8cdc"
+  ami                     = "ami-034153729211d5d49"
   instance_type           = "t2.micro"
   subnet_id               = aws_subnet.private[0].id
-  security_groups         = [aws_security_group.securitygroup.id]
+  security_groups         = [aws_security_group.securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
   ebs_optimized           = false
@@ -32,9 +32,6 @@ resource "aws_instance" "app_node" {
     "Name" = var.app_name
   }
   hibernation = false
-  credit_specification {
-    cpu_credits = "unlimited"
-  }
 }
 
 #resource "aws_instance" "trend_trader" {
@@ -54,9 +51,9 @@ resource "aws_instance" "app_node" {
 
 resource "aws_instance" "ec2jumphost" {
   instance_type           = "t2.nano"
-  ami                     = "ami-00bf0e20ed7ea8cdc"
+  ami                     = "ami-034153729211d5d49"
   subnet_id               = aws_subnet.public[0].id
-  security_groups         = [aws_security_group.ssh_securitygroup.id]
+  security_groups         = [aws_security_group.ssh_securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
   hibernation             = false
@@ -73,9 +70,9 @@ resource "aws_instance" "ec2jumphost" {
 }
 resource "aws_instance" "ec2nat" {
   instance_type               = "t2.nano"
-  ami                         = "ami-003acd4f8da7e06f9"
+  ami                         = "ami-00b9ad31459a9dcdf"
   subnet_id                   = aws_subnet.public[0].id
-  security_groups             = [aws_security_group.nat_securitygroup.id]
+  security_groups             = [aws_security_group.nat_securitygroup.name]
   associate_public_ip_address = true
   source_dest_check           = false
   tags                        = {

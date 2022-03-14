@@ -5,6 +5,8 @@ for i in supported_coin_list*; do
     docker_file_name=docker-stack${suffix}.yml
     apprise=apprise${suffix}.yml
     cfg=user${suffix}.cfg
+    db=data${suffix}
+    mkdir $db
     cp docker-stack.yml $docker_file_name
 #    cp config/apprise.yml config/${apprise}
 #    cp .user.cfg.example $cfg
@@ -13,6 +15,8 @@ for i in supported_coin_list*; do
     sed -i.bak 's/apprise.yml:/'${apprise}':/g' $docker_file_name
     rm -f *.bak
     sed -i.bak 's/user.cfg:/'${cfg}':/g' $docker_file_name
+    rm -f *.bak
+    sed -i.bak 's/data:/'${db}':/g' $docker_file_name
     rm -f *.bak
     docker stack deploy --compose-file $docker_file_name ${i/supported_coin_list_/}
 done
