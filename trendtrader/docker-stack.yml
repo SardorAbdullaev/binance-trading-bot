@@ -5,7 +5,6 @@ services:
     image: sardorabdullaev/binance-trend-trade-bot
     networks:
       - ingress
-    working_dir: /app
     volumes:
       - ./user.cfg:/app/user.cfg
       - ./supported_coin_list:/app/supported_coin_list
@@ -13,6 +12,7 @@ services:
       - logs_vol:/app/logs
       - ./config/apprise.yml:/app/config/apprise.yml
     command: python -m btb_manager_telegram
+    working_dir: /app/BTB-manager-telegram
     deploy:
       mode: replicated
       replicas: 1
