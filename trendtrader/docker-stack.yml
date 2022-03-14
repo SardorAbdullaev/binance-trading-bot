@@ -6,11 +6,11 @@ services:
     networks:
       - ingress
     volumes:
-      - ./user.cfg:/app/user.cfg
-      - ./supported_coin_list:/app/supported_coin_list
-      - ./data:/app/data
-      - logs_vol:/app/logs
-      - ./config/apprise.yml:/app/config/apprise.yml
+      - ./user.cfg:/app/binance-trade-bot/user.cfg
+      - ./supported_coin_list:/app/binance-trade-bot/supported_coin_list
+      - ./data:/app/binance-trade-bot/data
+      - logs_vol:/app/binance-trade-bot/logs
+      - ./config/apprise.yml:/app/binance-trade-bot/config/apprise.yml
     command: python -m btb_manager_telegram
     working_dir: /app/BTB-manager-telegram
     deploy:
