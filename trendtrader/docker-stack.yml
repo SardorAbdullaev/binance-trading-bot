@@ -12,7 +12,7 @@ services:
       - ./data:/app/data
       - logs_vol:/app/logs
       - ./config/apprise.yml:/app/config/apprise.yml
-    command: python -m binance_trade_bot
+    command: python -m btb_manager_telegram
     deploy:
       mode: replicated
       replicas: 1
