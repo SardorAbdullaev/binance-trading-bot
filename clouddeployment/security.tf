@@ -45,6 +45,12 @@ resource "aws_security_group" "nat_securitygroup" {
     to_port     = 443
     protocol    = "tcp"
   }
+  ingress {
+    cidr_blocks = var.private_subnets
+    from_port   = 9443
+    to_port     = 9443
+    protocol    = "tcp"
+  }
   egress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = 0
