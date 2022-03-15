@@ -22,7 +22,7 @@ resource "aws_vpc" "vpc" {
 
 resource "aws_instance" "app_node" {
   ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.micro"
+  instance_type           = "t2.small"
   subnet_id               = aws_subnet.private[0].id
   security_groups         = [aws_security_group.securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
