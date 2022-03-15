@@ -19,7 +19,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: 206M
+          memory: 226M
       restart_policy:
         condition: on-failure
     environment:
