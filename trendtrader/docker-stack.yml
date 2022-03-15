@@ -11,11 +11,15 @@ services:
       - ./data:/app/binance-trade-bot/data
       - logs_vol:/app/binance-trade-bot/logs
       - ./config/apprise.yml:/app/binance-trade-bot/config/apprise.yml
-    command: python -m btb_manager_telegram
-    working_dir: /app/BTB-manager-telegram
+    command: python -m binance_trade_bot
+    working_dir: /app/binance-trade-bot
     deploy:
       mode: replicated
       replicas: 1
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 150M
       restart_policy:
         condition: on-failure
     environment:
