@@ -22,9 +22,9 @@ resource "aws_vpc" "vpc" {
 
 resource "aws_instance" "app_node" {
   ami                     = "ami-00bf0e20ed7ea8cdc"
-  instance_type           = "t2.micro"
+  instance_type           = "t2.small"
   subnet_id               = aws_subnet.private[0].id
-  security_groups         = [aws_security_group.securitygroup.id]
+  security_groups         = [aws_security_group.securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
   ebs_optimized           = false
@@ -53,7 +53,7 @@ resource "aws_instance" "ec2jumphost" {
   instance_type           = "t2.nano"
   ami                     = "ami-00bf0e20ed7ea8cdc"
   subnet_id               = aws_subnet.public[0].id
-  security_groups         = [aws_security_group.ssh_securitygroup.id]
+  security_groups         = [aws_security_group.ssh_securitygroup.name]
   key_name                = aws_key_pair.ssh.key_name
   disable_api_termination = false
   hibernation             = false
