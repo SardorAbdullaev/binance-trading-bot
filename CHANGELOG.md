@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.88] - 2022-07-24
+
+- Added TRADINGVIEW_LOG_LEVEL. Thanks [@azorpax](https://github.com/azorpax) - [#436](https://github.com/chrisleekr/binance-trading-bot/pull/436)
+
+## [0.0.87] - 2022-07-23
+
+- Refactored error handling. Thanks [@habibalkhabbaz](https://github.com/habibalkhabbaz) - [#434](https://github.com/chrisleekr/binance-trading-bot/pull/434)
+
+## [0.0.86] - 2022-07-22
+
+- Upgraded TradingView TA to 3.2.10 - [#426](https://github.com/chrisleekr/binance-trading-bot/pull/426)
+- Added override trading view with auto trigger buy - [#429](https://github.com/chrisleekr/binance-trading-bot/pull/429)
+- Enhanced to use WebSocket for monitoring candles/orders/account information. It's faster! - [#431](https://github.com/chrisleekr/binance-trading-bot/pull/431)
+- Updated the frontend with pagination [#431](https://github.com/chrisleekr/binance-trading-bot/pull/431)
+- Updated account balance layout in the frontend [#431](https://github.com/chrisleekr/binance-trading-bot/pull/431)
+
+Thanks [@habibalkhabbaz](https://github.com/habibalkhabbaz) for all these updates!
+
 ## [0.0.85] - 2021-11-02
 
 - Refactored TradingView python server - [#383](https://github.com/chrisleekr/binance-trading-bot/pull/383)

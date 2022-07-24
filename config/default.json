@@ -90,6 +90,7 @@
             "whenLessThanATHRestriction": true,
             "afterDisabledPeriod": true,
             "tradingView": {
+              "overrideInterval": "",
               "whenStrongBuy": true,
               "whenBuy": true
             }
