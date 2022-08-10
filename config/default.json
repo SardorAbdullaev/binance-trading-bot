@@ -1,6 +1,6 @@
 {
   "mode": "test",
-  "tz": "Australia/Melbourne",
+  "tz": "Europe/Berlin",
   "appName": "Binance Trading Bot",
   "binance": {
     "live": {
@@ -56,27 +56,14 @@
       "enabled": true,
       "cronTime": "* * * * * *",
       "symbols": [
-        "XRPBTC",
-        "ADABTC",
-        "DOTBTC",
-        "LUNABTC",
-        "LINKBTC",
-        "EOSBTC",
-        "LTCBTC",
-        "BCHBTC",
-        "FTMBTC",
-        "AVAXBTC",
-        "XTZBTC",
-        "ATOMBTC",
-        "CAKEBTC",
-        "MANABTC",
-        "NEARBTC",
-        "TRXBTC",
-        "SANDBTC",
-        "UNIBTC",
-        "XLMBTC",
-        "ONEBTC",
-        "MATICBTC"
+        "ADAUSDT",
+        "LINKUSDT",
+        "XRPUSDT",
+        "BTCUSDT",
+        "ETHUSDT",
+        "DOTUSDT",
+        "BNBUSDT",
+        "DOTUSDT"
       ],
       "botOptions": {
         "authentication": {
@@ -99,11 +86,11 @@
         "orderLimit": {
           "enabled": true,
           "maxBuyOpenOrders": 4,
-          "maxOpenTrades": 7
+          "maxOpenTrades": 8
         },
         "tradingView": {
-          "interval": "1d",
-          "useOnlyWithin": 8,
+          "interval": "4h",
+          "useOnlyWithin": 15,
           "ifExpires": "ignore"
         },
         "logs": {
@@ -111,46 +98,35 @@
         }
       },
       "candles": {
-        "interval": "30m",
-        "limit": 280
+        "interval": "4h",
+        "limit": 15
       },
       "buy": {
         "enabled": true,
         "gridTrade": [
           {
-            "triggerPercentage": 1.057,
-            "stopPercentage": 1.008,
-            "limitPercentage": 1.0088,
+            "triggerPercentage": 1.056,
+            "stopPercentage": 1.016,
+            "limitPercentage": 1.0168,
             "minPurchaseAmount": -1,
             "minPurchaseAmounts": {
-              "USDT": 10,
-              "BTC": 0.00021,
-              "ETH": 0.005,
-              "BUSD": 10
+              "BUSD": 30
             },
             "maxPurchaseAmount": -1,
             "maxPurchaseAmounts": {
-              "USDT": 60,
-              "BTC": 0.0019,
-              "ETH": 0.021,
-              "BUSD": 60
+              "BUSD": 200
             }
           }
         ],
         "lastBuyPriceRemoveThreshold": -1,
-        "lastBuyPriceRemoveThresholds": {
-          "USDT": 10,
-          "BTC": 0.0001,
-          "ETH": 0.005,
-          "BUSD": 10
-        },
+        "lastBuyPriceRemoveThresholds": {},
         "athRestriction": {
           "enabled": true,
           "candles": {
             "interval": "1d",
-            "limit": 30
+            "limit": 15
           },
-          "restrictionPercentage": 0.92
+          "restrictionPercentage": 0.946
         },
         "tradingView": {
           "whenStrongBuy": true,
@@ -163,29 +139,26 @@
         "enabled": true,
         "gridTrade": [
           {
-            "triggerPercentage": 1.0537,
+            "triggerPercentage": 1.046,
             "stopPercentage": 0.99,
             "limitPercentage": 0.989,
             "quantityPercentage": -1,
             "quantityPercentages": {
-              "USDT": 0.6,
-              "BTC": 0.6,
-              "ETH": 0.6,
-              "BUSD": 0.6
+              "BUSD": 1
             }
           }
         ],
         "stopLoss": {
           "enabled": true,
-          "maxLossPercentage": 0.65,
-          "disableBuyMinutes": 120,
+          "maxLossPercentage": 0.87,
+          "disableBuyMinutes": 90,
           "orderType": "market"
         },
         "tradingView": {
           "forceSellOverZeroBelowTriggerPrice": {
             "whenNeutral": false,
             "whenSell": false,
-            "whenStrongSell": false
+            "whenStrongSell": true
           }
         }
       },
