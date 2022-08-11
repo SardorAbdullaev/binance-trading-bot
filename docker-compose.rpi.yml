@@ -3,7 +3,7 @@ version: '3.7'
 services:
   binance-bot:
     container_name: binance-bot
-    image: sardorabdullaev/binance-trailing-trade-bot:0.0.85
+    image: sardorabdullaev/binance-trailing-trade-bot:rpi-0.0.85
     networks:
       - internal
     env_file:
@@ -24,7 +24,7 @@ services:
 
   tradingview:
     container_name: tradingview
-    image: sardorabdullaev/binance-trailing-trade-bot:tradingview
+    image: sardorabdullaev/binance-trailing-trade-bot:rpi-tradingview
     networks:
       - internal
     restart: unless-stopped
