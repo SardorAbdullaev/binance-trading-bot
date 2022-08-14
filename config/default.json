@@ -56,14 +56,9 @@
       "enabled": true,
       "cronTime": "* * * * * *",
       "symbols": [
-        "ADAUSDT",
-        "LINKUSDT",
         "XRPUSDT",
         "BTCUSDT",
-        "ETHUSDT",
-        "DOTUSDT",
         "BNBUSDT",
-        "DOTUSDT"
       ],
       "botOptions": {
         "authentication": {
@@ -107,14 +102,14 @@
           {
             "triggerPercentage": 1.056,
             "stopPercentage": 1.016,
-            "limitPercentage": 1.0168,
+            "limitPercentage": 1.019,
             "minPurchaseAmount": -1,
             "minPurchaseAmounts": {
-              "BUSD": 30
+              "USDT": 30
             },
             "maxPurchaseAmount": -1,
             "maxPurchaseAmounts": {
-              "BUSD": 200
+              "USDT": 200
             }
           }
         ],
@@ -141,10 +136,10 @@
           {
             "triggerPercentage": 1.046,
             "stopPercentage": 0.99,
-            "limitPercentage": 0.989,
+            "limitPercentage": 0.984,
             "quantityPercentage": -1,
             "quantityPercentages": {
-              "BUSD": 1
+              "USDT": 1
             }
           }
         ],
