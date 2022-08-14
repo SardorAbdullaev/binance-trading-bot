@@ -57,8 +57,7 @@
       "cronTime": "* * * * * *",
       "symbols": [
         "XRPUSDT",
-        "BTCUSDT",
-        "BNBUSDT",
+        "BTCUSDT"
       ],
       "botOptions": {
         "authentication": {
