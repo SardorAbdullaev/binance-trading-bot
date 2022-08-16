@@ -2,10 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2022-07-24
-
-- Added TRADINGVIEW_LOG_LEVEL. Thanks [@azorpax](https://github.com/azorpax) - [#436](https://github.com/chrisleekr/binance-trading-bot/pull/436)
-
 ## [0.0.87] - 2022-07-23
 
 - Refactored error handling. Thanks [@habibalkhabbaz](https://github.com/habibalkhabbaz) - [#434](https://github.com/chrisleekr/binance-trading-bot/pull/434)
