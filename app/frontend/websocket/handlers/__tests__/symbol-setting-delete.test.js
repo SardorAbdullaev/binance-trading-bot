@@ -8,8 +8,6 @@ describe('symbol-setting-delete.test.js', () => {
 
   let mockDeleteSymbolConfiguration;
 
-  let mockExecuteTrailingTrade;
-
   beforeEach(() => {
     jest.clearAllMocks().resetModules();
 
@@ -34,12 +32,6 @@ describe('symbol-setting-delete.test.js', () => {
         })
       );
 
-      mockExecuteTrailingTrade = jest.fn().mockResolvedValue(true);
-
-      jest.mock('../../../../cronjob', () => ({
-        executeTrailingTrade: mockExecuteTrailingTrade
-      }));
-
       const { handleSymbolSettingDelete } = require('../symbol-setting-delete');
       await handleSymbolSettingDelete(logger, mockWebSocketServer, {
         data: {
@@ -50,13 +42,6 @@ describe('symbol-setting-delete.test.js', () => {
 
     it('triggers deleteSymbolConfiguration', () => {
       expect(mockDeleteSymbolConfiguration).toHaveBeenCalledWith(
-        mockLogger,
-        'BTCUSDT'
-      );
-    });
-
-    it('triggers executeTrailingTrade', () => {
-      expect(mockExecuteTrailingTrade).toHaveBeenCalledWith(
         mockLogger,
         'BTCUSDT'
       );

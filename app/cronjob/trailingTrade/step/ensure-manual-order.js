@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 const moment = require('moment');
 const _ = require('lodash');
-const { PubSub, slack } = require('../../../helpers');
+const { PubSub, binance, slack } = require('../../../helpers');
 const {
   calculateLastBuyPrice,
   getAPILimit,
@@ -15,7 +15,8 @@ const {
 
 const {
   getManualOrders,
-  deleteManualOrder
+  deleteManualOrder,
+  saveManualOrder
 } = require('../../trailingTradeHelper/order');
 
 /**
@@ -24,10 +25,17 @@ const {
  * @param {*} logger
  * @param {*} symbol
  * @param {*} side
- * @param {*} order
+ * @param {*} orderParams
+ * @param {*} orderResult
  */
-const slackMessageOrderFilled = async (logger, symbol, side, order) => {
-  const type = order.type.toUpperCase();
+const slackMessageOrderFilled = async (
+  logger,
+  symbol,
+  side,
+  orderParams,
+  orderResult
+) => {
+  const type = orderParams.type.toUpperCase();
 
   PubSub.publish('frontend-notification', {
     type: 'success',
@@ -38,7 +46,11 @@ const slackMessageOrderFilled = async (logger, symbol, side, order) => {
     `${symbol} Manual ${side.toUpperCase()} Order Filled (${moment().format(
       'HH:mm:ss.SSS'
     )}): *${type}*\n` +
-      `- Order Result: \`\`\`${JSON.stringify(order, undefined, 2)}\`\`\`\n` +
+      `- Order Result: \`\`\`${JSON.stringify(
+        orderResult,
+        undefined,
+        2
+      )}\`\`\`\n` +
       `- Current API Usage: ${getAPILimit(logger)}`
   );
 };
@@ -88,21 +100,32 @@ const saveGridTrade = async (logger, rawData, order) => {
  * @param {*} logger
  * @param {*} symbol
  * @param {*} side
- * @param {*} order
+ * @param {*} orderParams
+ * @param {*} orderResult
  */
-const slackMessageOrderDeleted = async (logger, symbol, side, order) => {
-  const type = order.type.toUpperCase();
+const slackMessageOrderDeleted = async (
+  logger,
+  symbol,
+  side,
+  orderParams,
+  orderResult
+) => {
+  const type = orderParams.type.toUpperCase();
 
   PubSub.publish('frontend-notification', {
     type: 'success',
-    title: `The ${side} order for ${symbol} is ${order.status}. Stop monitoring.`
+    title: `The ${side} order for ${symbol} is ${orderResult.status}. Stop monitoring.`
   });
 
   return slack.sendMessage(
     `${symbol} Manual ${side.toUpperCase()} Order Removed (${moment().format(
       'HH:mm:ss.SSS'
     )}): *${type}*\n` +
-      `- Order Result: \`\`\`${JSON.stringify(order, undefined, 2)}\`\`\`\n` +
+      `- Order Result: \`\`\`${JSON.stringify(
+        orderResult,
+        undefined,
+        2
+      )}\`\`\`\n` +
       `- Current API Usage: ${getAPILimit(logger)}`
   );
 };
@@ -116,7 +139,12 @@ const slackMessageOrderDeleted = async (logger, symbol, side, order) => {
 const execute = async (logger, rawData) => {
   const data = rawData;
 
-  const { symbol } = data;
+  const {
+    symbol,
+    symbolConfiguration: {
+      system: { checkManualOrderPeriod }
+    }
+  } = data;
 
   if (isExceedAPILimit(logger)) {
     logger.info('The API limit is exceed, do not try to ensure manual order.');
@@ -156,15 +184,119 @@ const execute = async (logger, rawData) => {
       await saveGridTrade(logger, data, order);
 
       await deleteManualOrder(logger, symbol, order.orderId);
-
-      slackMessageOrderFilled(logger, symbol, order.side, order);
-    } else if (removeStatuses.includes(order.status)) {
-      // If order is no longer available, then delete from cache
-      await deleteManualOrder(logger, symbol, order.orderId);
-
-      slackMessageOrderDeleted(logger, symbol, order.side, order);
     } else {
-      logger.info({ order, currentTime: moment() }, 'Skip checking the order');
+      // If not filled, check orders is time to check or not
+      const nextCheck = _.get(order, 'nextCheck', null);
+
+      if (moment(nextCheck) < moment()) {
+        // Check orders whether it's filled or not
+        let orderResult;
+        try {
+          orderResult = await binance.client.getOrder({
+            symbol,
+            orderId: order.orderId
+          });
+        } catch (e) {
+          logger.error(
+            { e },
+            'The order could not be found or error occurred querying the order.'
+          );
+          const updatedNextCheck = moment().add(
+            checkManualOrderPeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              e,
+              order,
+              checkManualOrderPeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The manual order could not be found or error occurred querying the order.'
+          );
+
+          await saveManualOrder(logger, symbol, order.orderId, {
+            ...order,
+            nextCheck: updatedNextCheck.format()
+          });
+
+          return data;
+        }
+
+        // If filled, then calculate average cost and quantity and save new last buy pirce.
+        if (orderResult.status === 'FILLED') {
+          logger.info(
+            { order, saveLog: true },
+            'The manual order is filled. Caluclating last buy price...'
+          );
+
+          // Calulate last buy price
+          if (orderResult.side === 'BUY') {
+            await calculateLastBuyPrice(logger, symbol, orderResult);
+          }
+
+          // Save grid trade to the database
+          await saveGridTrade(logger, data, orderResult);
+
+          // Remove manual buy order
+          await deleteManualOrder(logger, symbol, orderResult.orderId);
+
+          slackMessageOrderFilled(
+            logger,
+            symbol,
+            order.side,
+            order,
+            orderResult
+          );
+        } else if (removeStatuses.includes(orderResult.status) === true) {
+          // If order is no longer available, then delete from cache
+          logger.info(
+            {
+              orderResult,
+              saveLog: true
+            },
+            'The manual order status is no longer valid. Delete the manual order.'
+          );
+
+          await deleteManualOrder(logger, symbol, orderResult.orderId);
+
+          slackMessageOrderDeleted(
+            logger,
+            symbol,
+            order.side,
+            order,
+            orderResult
+          );
+        } else {
+          // If not filled, update next check time
+          const updatedNextCheck = moment().add(
+            checkManualOrderPeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              orderResult,
+              checkManualOrderPeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The manual order is not filled.'
+          );
+
+          await saveManualOrder(logger, symbol, orderResult.orderId, {
+            ...orderResult,
+            nextCheck: updatedNextCheck.format()
+          });
+        }
+      } else {
+        logger.info(
+          { order, nextCheck, currentTime: moment() },
+          'Skip checking the order'
+        );
+      }
     }
   }
 

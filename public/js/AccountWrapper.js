@@ -3,14 +3,33 @@
 /* eslint-disable no-undef */
 class AccountWrapper extends React.Component {
   render() {
-    const { accountInfo, dustTransfer, sendWebSocket, isAuthenticated } =
-      this.props;
+    const {
+      accountInfo,
+      dustTransfer,
+      sendWebSocket,
+      isAuthenticated,
+      quoteEstimates
+    } = this.props;
 
     const assets = accountInfo.balances.map((balance, index) => {
+      let quoteEstimate = quoteEstimates.filter(
+        elem => elem.baseAsset === balance.asset
+      );
+
+      if (quoteEstimate.length == 1) {
+        quoteEstimate = {
+          quote: quoteEstimate[0]['quoteAsset'],
+          estimate: quoteEstimate[0]['estimatedValue']
+        };
+      } else {
+        quoteEstimate = null;
+      }
+
       return (
         <AccountWrapperAsset
           key={`account-wrapper-` + index}
-          balance={balance}></AccountWrapperAsset>
+          balance={balance}
+          quoteEstimate={quoteEstimate}></AccountWrapperAsset>
       );
     });
 
@@ -30,10 +49,10 @@ class AccountWrapper extends React.Component {
             </Accordion.Toggle>
             <Accordion.Collapse eventKey='0'>
               <Card.Body className='d-flex flex-column py-2 px-0'>
-                <div className='account-balance-assets-wrapper px-2'>
+                <div className='account-balance-assets-wrapper d-flex flex-row flex-wrap justify-content-start'>
                   {assets}
                 </div>
-                <div className='d-flex flex-row flex-wrap justify-content-end'>
+                <div className='account-balance-assets-wrapper d-flex flex-row flex-wrap justify-content-end'>
                   <DustTransferIcon
                     isAuthenticated={isAuthenticated}
                     dustTransfer={dustTransfer}

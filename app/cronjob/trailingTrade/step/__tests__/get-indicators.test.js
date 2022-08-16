@@ -7,7 +7,6 @@ describe('get-indicators.js', () => {
 
   let cacheMock;
   let loggerMock;
-  let mongoMock;
 
   let mockGetLastBuyPrice;
 
@@ -15,10 +14,9 @@ describe('get-indicators.js', () => {
     beforeEach(() => {
       jest.clearAllMocks().resetModules();
 
-      const { cache, logger, mongo } = require('../../../../helpers');
+      const { cache, logger } = require('../../../../helpers');
       cacheMock = cache;
       loggerMock = logger;
-      mongoMock = mongo;
     });
 
     describe('with no open orders and no last buy price', () => {
@@ -29,6 +27,17 @@ describe('get-indicators.js', () => {
         }));
 
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
+          if (
+            hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
           if (
             hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
@@ -61,49 +70,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
-
         step = require('../get-indicators');
 
         rawData = {
@@ -112,7 +78,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -121,11 +86,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -154,7 +115,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -163,11 +123,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -252,6 +208,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: null
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -282,49 +249,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
-
         step = require('../get-indicators');
 
         rawData = {
@@ -333,7 +257,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -342,11 +265,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: false,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -375,7 +294,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -384,11 +302,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: false,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -474,6 +388,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -503,49 +428,6 @@ describe('get-indicators.js', () => {
 
           return null;
         });
-
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
       });
 
       describe('when buy grid trade index is null', () => {
@@ -558,17 +440,12 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: -1,
                 currentGridTrade: null,
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -597,17 +474,12 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: -1,
                 currentGridTrade: null,
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -689,7 +561,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 0,
                 currentGridTrade: {
@@ -698,11 +569,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -734,7 +601,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 0,
                 currentGridTrade: {
@@ -743,11 +609,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -832,7 +694,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 1,
                 currentGridTrade: {
@@ -841,11 +702,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -877,7 +734,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 1,
                 currentGridTrade: {
@@ -886,11 +742,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -978,6 +830,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -1007,49 +870,6 @@ describe('get-indicators.js', () => {
 
           return null;
         });
-
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
       });
 
       describe('when buy grid trade index is null', () => {
@@ -1062,17 +882,12 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: -1,
                 currentGridTrade: null,
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1131,17 +946,12 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: -1,
                 currentGridTrade: null,
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1308,7 +1118,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 0,
                 currentGridTrade: {
@@ -1317,11 +1126,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1383,7 +1188,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 0,
                 currentGridTrade: {
@@ -1392,11 +1196,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1566,7 +1366,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 1,
                 currentGridTrade: {
@@ -1575,11 +1374,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1641,7 +1436,6 @@ describe('get-indicators.js', () => {
               filterMinNotional: { minNotional: '10.000' }
             },
             symbolConfiguration: {
-              candles: { limit: '100' },
               buy: {
                 currentGridTradeIndex: 1,
                 currentGridTrade: {
@@ -1650,11 +1444,7 @@ describe('get-indicators.js', () => {
                 },
                 athRestriction: {
                   enabled: true,
-                  restrictionPercentage: 0.9,
-                  candles: {
-                    interval: '1d',
-                    limit: 30
-                  }
+                  restrictionPercentage: 0.9
                 }
               },
               sell: {
@@ -1825,6 +1615,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -1855,49 +1656,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
-
         step = require('../get-indicators');
         rawData = {
           symbol: 'BTCUSDT',
@@ -1905,7 +1663,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -1914,11 +1671,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -1975,7 +1728,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -1984,11 +1736,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2158,6 +1906,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -2188,49 +1947,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
-
         step = require('../get-indicators');
 
         rawData = {
@@ -2239,7 +1955,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2248,11 +1963,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2285,7 +1996,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2294,11 +2004,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2373,7 +2079,7 @@ describe('get-indicators.js', () => {
       });
     });
 
-    describe('when there are no candles from mongo', () => {
+    describe('when there is no indicator data cache', () => {
       beforeEach(async () => {
         mockGetLastBuyPrice = jest.fn().mockResolvedValue(null);
         jest.mock('../../../trailingTradeHelper/common', () => ({
@@ -2394,8 +2100,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest.fn().mockResolvedValue([]);
-
         step = require('../get-indicators');
 
         rawData = {
@@ -2404,7 +2108,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2413,11 +2116,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2442,7 +2141,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2451,11 +2149,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2480,50 +2174,18 @@ describe('get-indicators.js', () => {
           getLastBuyPrice: mockGetLastBuyPrice
         }));
 
-        cacheMock.hget = jest.fn().mockResolvedValue(null);
+        cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
+          if (
+            hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              lowestPrice: 8893.03
+            });
+          }
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
+          return null;
+        });
 
         step = require('../get-indicators');
 
@@ -2533,7 +2195,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2542,11 +2203,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2571,7 +2228,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2580,11 +2236,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2612,6 +2264,17 @@ describe('get-indicators.js', () => {
         cacheMock.hget = jest.fn().mockImplementation((hash, key) => {
           if (
             hash === 'trailing-trade-symbols' &&
+            key === 'BTCUSDT-indicator-data'
+          ) {
+            return JSON.stringify({
+              highestPrice: 10000,
+              lowestPrice: 8893.03,
+              athPrice: 9000
+            });
+          }
+
+          if (
+            hash === 'trailing-trade-symbols' &&
             key === 'BTCUSDT-latest-candle'
           ) {
             return JSON.stringify({
@@ -2623,49 +2286,6 @@ describe('get-indicators.js', () => {
           return null;
         });
 
-        mongoMock.findAll = jest
-          .fn()
-          .mockImplementation((_logger, collectionName, _query, _params) => {
-            if (collectionName === 'trailing-trade-candles') {
-              return [
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8990.5,
-                  high: 10000,
-                  low: 8893.03,
-                  close: 9899.05
-                },
-                {
-                  interval: '1h',
-                  key: 'BTCUSDT',
-                  open: 8666.4,
-                  high: 9000.6,
-                  low: 8899.03,
-                  close: 9000.1
-                }
-              ];
-            }
-            return [
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 8690.5,
-                high: 9000,
-                low: 8110.04,
-                close: 9899.05
-              },
-              {
-                interval: '1d',
-                key: 'BTCUSDT',
-                open: 7755.66,
-                high: 8000,
-                low: 7695.6,
-                close: 8500
-              }
-            ];
-          });
-
         step = require('../get-indicators');
         rawData = {
           symbol: 'BTCUSDT',
@@ -2673,7 +2293,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2682,11 +2301,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {
@@ -2713,7 +2328,6 @@ describe('get-indicators.js', () => {
             filterMinNotional: { minNotional: '10.000' }
           },
           symbolConfiguration: {
-            candles: { limit: '100' },
             buy: {
               currentGridTradeIndex: 0,
               currentGridTrade: {
@@ -2722,11 +2336,7 @@ describe('get-indicators.js', () => {
               },
               athRestriction: {
                 enabled: true,
-                restrictionPercentage: 0.9,
-                candles: {
-                  interval: '1d',
-                  limit: 30
-                }
+                restrictionPercentage: 0.9
               }
             },
             sell: {

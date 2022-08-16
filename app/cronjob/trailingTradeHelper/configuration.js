@@ -51,15 +51,6 @@ const reconfigureIndex = async (logger, configuration) => {
  * @param {*} configuration
  */
 const saveGlobalConfiguration = async (logger, configuration) => {
-  // get old configuration before saving the new one to compare
-  const oldConfiguration = await mongo.findOne(
-    logger,
-    'trailing-trade-common',
-    {
-      key: 'configuration'
-    }
-  );
-
   // Save to cache for watching changes.
   const result = await mongo.upsertOne(
     logger,
@@ -76,24 +67,7 @@ const saveGlobalConfiguration = async (logger, configuration) => {
   await cache.hdelall('trailing-trade-configurations:*');
 
   await reconfigureIndex(logger, configuration);
-
-  // reset all websockets only when symbols, candles or ath candles are changed
-  if (
-    _.isEqual(
-      _.get(oldConfiguration, 'symbols', []),
-      _.get(configuration, 'symbols', [])
-    ) === false ||
-    _.isEqual(
-      _.get(oldConfiguration, 'candles', {}),
-      _.get(configuration, 'candles', {})
-    ) === false ||
-    _.isEqual(
-      _.get(oldConfiguration, ['buy', 'athRestriction', 'candles'], {}),
-      _.get(configuration, ['buy', 'athRestriction', 'candles'], {})
-    ) === false
-  ) {
-    PubSub.publish('reset-all-websockets', true);
-  }
+  PubSub.publish('reset-binance-websocket', true);
 
   return result;
 };
@@ -200,8 +174,6 @@ const saveSymbolConfiguration = async (
     return {};
   }
 
-  const oldConfiguration = await getSymbolConfiguration(logger, symbol);
-
   const result = await mongo.upsertOne(
     logger,
     'trailing-trade-symbols',
@@ -215,20 +187,6 @@ const saveSymbolConfiguration = async (
   );
 
   await cache.hdel('trailing-trade-configurations', symbol);
-
-  // reset symbol websockets only when candles or ath candles are changed
-  if (
-    _.isEqual(
-      _.get(oldConfiguration, 'candles', {}),
-      _.get(configuration, 'candles', {})
-    ) === false ||
-    _.isEqual(
-      _.get(oldConfiguration, ['buy', 'athRestriction', 'candles'], {}),
-      _.get(configuration, ['buy', 'athRestriction', 'candles'], {})
-    ) === false
-  ) {
-    PubSub.publish('reset-symbol-websockets', symbol);
-  }
 
   return result;
 };
@@ -493,9 +451,6 @@ const deleteSymbolConfiguration = async (logger, symbol) => {
   });
 
   await cache.hdel('trailing-trade-configurations', symbol);
-
-  PubSub.publish('reset-symbol-websockets', symbol);
-
   return result;
 };
 

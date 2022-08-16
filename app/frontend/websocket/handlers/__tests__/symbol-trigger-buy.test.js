@@ -7,7 +7,6 @@ describe('symbol-trigger-buy.test.js', () => {
   let mockLogger;
 
   let mockSaveOverrideAction;
-  let mockExecuteTrailingTrade;
 
   beforeEach(() => {
     jest.clearAllMocks().resetModules();
@@ -22,12 +21,6 @@ describe('symbol-trigger-buy.test.js', () => {
 
     jest.mock('../../../../cronjob/trailingTradeHelper/common', () => ({
       saveOverrideAction: mockSaveOverrideAction
-    }));
-
-    mockExecuteTrailingTrade = jest.fn().mockResolvedValue(true);
-
-    jest.mock('../../../../cronjob', () => ({
-      executeTrailingTrade: mockExecuteTrailingTrade
     }));
   });
 
@@ -56,13 +49,6 @@ describe('symbol-trigger-buy.test.js', () => {
           checkTradingView: false
         },
         'The buy order received by the bot. Wait for placing the order.'
-      );
-    });
-
-    it('triggers executeTrailingTrade', () => {
-      expect(mockExecuteTrailingTrade).toHaveBeenCalledWith(
-        mockLogger,
-        'BTCUSDT'
       );
     });
 

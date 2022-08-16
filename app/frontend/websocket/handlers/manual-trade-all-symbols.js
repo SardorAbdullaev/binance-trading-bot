@@ -7,7 +7,6 @@ const {
 const {
   saveOverrideAction
 } = require('../../../cronjob/trailingTradeHelper/common');
-const { executeTrailingTrade } = require('../../../cronjob');
 
 const handleManualTradeAllSymbols = async (logger, ws, payload) => {
   logger.info({ payload }, 'Start manual trade all symbols');
@@ -34,7 +33,7 @@ const handleManualTradeAllSymbols = async (logger, ws, payload) => {
   let currentTime = moment();
   if (side === 'buy') {
     _.forOwn(buy.symbols, (quoteAsset, _quoteSymbol) => {
-      _.forOwn(quoteAsset.baseAssets, async (baseAsset, _baseSymbol) => {
+      _.forOwn(quoteAsset.baseAssets, (baseAsset, _baseSymbol) => {
         const { symbol } = baseAsset;
         const quoteOrderQty = parseFloat(baseAsset.quoteOrderQty);
 
@@ -55,14 +54,12 @@ const handleManualTradeAllSymbols = async (logger, ws, payload) => {
 
           logger.info({ symbolOrder }, `Queueing order for ${symbol}.`);
 
-          await saveOverrideAction(
+          saveOverrideAction(
             logger,
             symbol,
             symbolOrder,
             `Order for ${symbol} has been queued.`
           );
-
-          executeTrailingTrade(logger, symbol);
 
           currentTime = moment(currentTime).add(
             placeManualOrderInterval,
@@ -75,7 +72,7 @@ const handleManualTradeAllSymbols = async (logger, ws, payload) => {
 
   if (side === 'sell') {
     _.forOwn(sell.symbols, (quoteAsset, _quoteSymbol) => {
-      _.forOwn(quoteAsset.baseAssets, async (baseAsset, _baseSymbol) => {
+      _.forOwn(quoteAsset.baseAssets, (baseAsset, _baseSymbol) => {
         const { symbol } = baseAsset;
         const marketQuantity = parseFloat(baseAsset.marketQuantity);
 
@@ -96,14 +93,12 @@ const handleManualTradeAllSymbols = async (logger, ws, payload) => {
 
           logger.info({ symbolOrder }, `Queueing order for ${symbol}.`);
 
-          await saveOverrideAction(
+          saveOverrideAction(
             logger,
             symbol,
             symbolOrder,
             `Order for ${symbol} has been queued.`
           );
-
-          executeTrailingTrade(logger, symbol);
 
           currentTime = moment(currentTime).add(
             placeManualOrderInterval,

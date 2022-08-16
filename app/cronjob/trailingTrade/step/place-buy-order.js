@@ -2,12 +2,12 @@ const _ = require('lodash');
 const moment = require('moment');
 const { binance, slack } = require('../../../helpers');
 const {
-  updateAccountInfo,
+  getAndCacheOpenOrdersForSymbol,
+  getAccountInfoFromAPI,
   isExceedAPILimit,
   getAPILimit,
   saveOrderStats,
-  saveOverrideAction,
-  getAndCacheOpenOrdersForSymbol
+  saveOverrideAction
 } = require('../../trailingTradeHelper/common');
 const { saveGridTradeOrder } = require('../../trailingTradeHelper/order');
 
@@ -143,7 +143,7 @@ const setMessage = (logger, rawData, processMessage) => {
 
   logger.info({ data, saveLog: true }, processMessage);
   data.buy.processMessage = processMessage;
-  data.buy.updatedAt = moment().utc().toDate();
+  data.buy.updatedAt = moment().utc();
   return data;
 };
 
@@ -169,7 +169,8 @@ const execute = async (logger, rawData) => {
     },
     symbolConfiguration: {
       symbols,
-      buy: { enabled: tradingEnabled, currentGridTradeIndex, currentGridTrade }
+      buy: { enabled: tradingEnabled, currentGridTradeIndex, currentGridTrade },
+      system: { checkOrderExecutePeriod }
     },
     action,
     quoteAssetBalance: { free: quoteAssetFreeBalance },
@@ -311,9 +312,11 @@ const execute = async (logger, rawData) => {
       lotStepSizePrecision
     )
   );
+
   // If free balance is exactly same as minimum notional, then it will be failed to place the order
   // because it will be always less than minimum notional after calculating commission.
   // To avoid the minimum notional issue, add commission to free balance
+
   if (
     orgFreeBalance > parseFloat(minNotional) &&
     maxPurchaseAmount === parseFloat(minNotional)
@@ -332,19 +335,21 @@ const execute = async (logger, rawData) => {
       )
     );
   }
+
   logger.info({ orderQuantity }, 'Order quantity after commission');
 
-  const orderAmount = orderQuantity * limitPrice;
-
-  if (orderAmount < parseFloat(minNotional)) {
+  if (orderQuantity * limitPrice < parseFloat(minNotional)) {
     const processMessage =
       `Do not place a buy order for the grid trade #${humanisedGridTradeIndex} ` +
       `as not enough ${quoteAsset} ` +
       `to buy ${baseAsset} after calculating commission - Order amount: ${_.floor(
-        orderAmount,
+        orderQuantity * limitPrice,
         priceTickPrecision
       )} ${quoteAsset}, Minimum notional: ${minNotional}.`;
-    logger.info({ calculatedAmount: orderAmount, minNotional }, processMessage);
+    logger.info(
+      { calculatedAmount: orderQuantity * limitPrice, minNotional },
+      processMessage
+    );
 
     return setMessage(logger, data, processMessage);
   }
@@ -433,7 +438,8 @@ const execute = async (logger, rawData) => {
   // Set last buy grid order to be checked until it is executed
   await saveGridTradeOrder(logger, `${symbol}-grid-trade-last-buy-order`, {
     ...orderResult,
-    currentGridTradeIndex
+    currentGridTradeIndex,
+    nextCheck: moment().add(checkOrderExecutePeriod, 'seconds').format()
   });
 
   // Save number of open orders
@@ -445,25 +451,8 @@ const execute = async (logger, rawData) => {
     o => o.side.toLowerCase() === 'buy'
   );
 
-  // Immediately update the balance of quote asset when the order is canceled so that
-  // we don't have to wait for the websocket and to avoid the race condition
-  const balances = [
-    {
-      asset: quoteAsset,
-      free: _.toNumber(data.quoteAssetBalance.free) - _.toNumber(orderAmount),
-      locked:
-        _.toNumber(data.quoteAssetBalance.locked) + _.toNumber(orderAmount)
-    }
-  ];
-
-  logger.info({ balances }, 'Received new user activity');
-
   // Refresh account info
-  data.accountInfo = await updateAccountInfo(
-    logger,
-    balances,
-    moment().utc().format()
-  );
+  data.accountInfo = await getAccountInfoFromAPI(logger);
 
   slack.sendMessage(
     `${symbol} Buy Action Grid Trade #${humanisedGridTradeIndex} Result (${moment().format(

@@ -1,7 +1,7 @@
 const moment = require('moment');
 const _ = require('lodash');
 
-const { slack, PubSub } = require('../../../helpers');
+const { slack, PubSub, binance } = require('../../../helpers');
 const {
   calculateLastBuyPrice,
   getAPILimit,
@@ -14,9 +14,51 @@ const {
   saveSymbolGridTrade
 } = require('../../trailingTradeHelper/configuration');
 const {
+  getGridTradeOrder,
   deleteGridTradeOrder,
-  getGridTradeLastOrder
+  saveGridTradeOrder
 } = require('../../trailingTradeHelper/order');
+
+/**
+ * Retrieve last grid order from cache
+ *
+ * @param {*} logger
+ * @param {*} symbol
+ * @param {*} side
+ * @returns
+ */
+const getGridTradeLastOrder = async (logger, symbol, side) => {
+  const lastOrder =
+    (await getGridTradeOrder(
+      logger,
+      `${symbol}-grid-trade-last-${side}-order`
+    )) || {};
+
+  logger.info(
+    { lastOrder },
+    `Retrieved grid trade last ${side} order from cache`
+  );
+
+  return lastOrder;
+};
+
+/**
+ * Update grid trade order
+ *
+ * @param {*} logger
+ * @param {*} symbol
+ * @param {*} side
+ * @param {*} newOrder
+ */
+const updateGridTradeLastOrder = async (logger, symbol, side, newOrder) => {
+  await saveGridTradeOrder(
+    logger,
+    `${symbol}-grid-trade-last-${side}-order`,
+    newOrder
+  );
+
+  logger.info(`Updated grid trade last ${side} order to cache`);
+};
 
 /**
  * Remove last order from cache
@@ -39,24 +81,30 @@ const removeGridTradeLastOrder = async (logger, symbols, symbol, side) => {
  * @param {*} logger
  * @param {*} symbol
  * @param {*} side
- * @param {*} order
+ * @param {*} orderParams
+ * @param {*} orderResult
  * @param {*} notifyOrderExecute
  */
 const slackMessageOrderFilled = async (
   logger,
   symbol,
   side,
-  order,
+  orderParams,
+  orderResult,
   notifyOrderExecute
 ) => {
-  const type = order.type.toUpperCase();
+  const type =
+    orderParams?.type?.toUpperCase() ||
+    orderResult?.type?.toUpperCase() ||
+    'Undefined';
 
-  const humanisedGridTradeIndex = order.currentGridTradeIndex + 1;
+  const humanisedGridTradeIndex = orderParams.currentGridTradeIndex + 1;
 
   logger.info(
     {
       side,
-      order,
+      orderParams,
+      orderResult,
       saveLog: true
     },
     `The ${side} order of the grid trade #${humanisedGridTradeIndex} ` +
@@ -75,7 +123,11 @@ const slackMessageOrderFilled = async (
       `${symbol} ${side.toUpperCase()} Grid Trade #${humanisedGridTradeIndex} Order Filled (${moment().format(
         'HH:mm:ss.SSS'
       )}): *${type}*\n` +
-        `- Order Result: \`\`\`${JSON.stringify(order, undefined, 2)}\`\`\`\n` +
+        `- Order Result: \`\`\`${JSON.stringify(
+          orderResult,
+          undefined,
+          2
+        )}\`\`\`\n` +
         `- Current API Usage: ${getAPILimit(logger)}`
     );
   }
@@ -89,35 +141,41 @@ const slackMessageOrderFilled = async (
  * @param {*} logger
  * @param {*} symbol
  * @param {*} side
- * @param {*} order
+ * @param {*} orderParams
+ * @param {*} orderResult
  * @param {*} notifyOrderExecute
  */
 const slackMessageOrderDeleted = async (
   logger,
   symbol,
   side,
-  order,
+  orderParams,
+  orderResult,
   notifyOrderExecute
 ) => {
-  const type = order.type.toUpperCase();
+  const type =
+    orderParams?.type?.toUpperCase() ||
+    orderResult?.type?.toUpperCase() ||
+    'Undefined';
 
-  const humanisedGridTradeIndex = order.currentGridTradeIndex + 1;
+  const humanisedGridTradeIndex = orderParams.currentGridTradeIndex + 1;
 
   logger.info(
     {
       side,
-      order,
+      orderParams,
+      orderResult,
       saveLog: true
     },
     `The ${side} order of the grid trade #${humanisedGridTradeIndex} ` +
-      `for ${symbol} is ${order.status}. Stop monitoring.`
+      `for ${symbol} is ${orderResult.status}. Stop monitoring.`
   );
 
   PubSub.publish('frontend-notification', {
     type: 'success',
     title:
       `The ${side} order of the grid trade #${humanisedGridTradeIndex} ` +
-      `for ${symbol} is ${order.status}. Stop monitoring.`
+      `for ${symbol} is ${orderResult.status}. Stop monitoring.`
   });
 
   if (notifyOrderExecute) {
@@ -125,7 +183,11 @@ const slackMessageOrderDeleted = async (
       `${symbol} ${side.toUpperCase()} Grid Trade #${humanisedGridTradeIndex} Order Removed (${moment().format(
         'HH:mm:ss.SSS'
       )}): *${type}*\n` +
-        `- Order Result: \`\`\`${JSON.stringify(order, undefined, 2)}\`\`\`\n` +
+        `- Order Result: \`\`\`${JSON.stringify(
+          orderResult,
+          undefined,
+          2
+        )}\`\`\`\n` +
         `- Current API Usage: ${getAPILimit(logger)}`
     );
   }
@@ -148,7 +210,7 @@ const saveGridTrade = async (logger, rawData, order) => {
       sell: { gridTrade: sellGridTrade }
     }
   } = rawData;
-  // Assumed grid trade in the symbol configuration is already up to date.
+  // Assummed grid trade in the symbol configuration is already up to date.
   const { side, type, currentGridTradeIndex } = order;
 
   const newGridTrade = {
@@ -200,7 +262,10 @@ const execute = async (logger, rawData) => {
     featureToggle: { notifyOrderExecute },
     symbolConfiguration: {
       symbols,
-      system: { temporaryDisableActionAfterConfirmingOrder }
+      system: {
+        checkOrderExecutePeriod,
+        temporaryDisableActionAfterConfirmingOrder
+      }
     }
   } = data;
 
@@ -239,6 +304,7 @@ const execute = async (logger, rawData) => {
         symbol,
         'buy',
         lastBuyOrder,
+        lastBuyOrder,
         notifyOrderExecute
       );
 
@@ -254,29 +320,137 @@ const execute = async (logger, rawData) => {
         },
         temporaryDisableActionAfterConfirmingOrder
       );
-    } else if (removeStatuses.includes(lastBuyOrder.status)) {
-      logger.info(
-        {
-          lastBuyOrder,
-          saveLog: true
-        },
-        `The order status "${lastBuyOrder.status}" is no longer valid. Delete the order to stop monitoring.`
-      );
-      // If order is no longer available, then delete from cache
-      await removeGridTradeLastOrder(logger, symbols, symbol, 'buy');
-
-      slackMessageOrderDeleted(
-        logger,
-        symbol,
-        'buy',
-        lastBuyOrder,
-        notifyOrderExecute
-      );
     } else {
-      logger.info(
-        { lastBuyOrder, currentTime: moment() },
-        'Skip checking the grid trade last buy order'
-      );
+      // If not filled, check orders is time to check or not
+      const nextCheck = _.get(lastBuyOrder, 'nextCheck', null);
+      if (moment(nextCheck) < moment()) {
+        // Check orders whether it's filled or not
+        let orderResult;
+        try {
+          orderResult = await binance.client.getOrder({
+            symbol,
+            orderId: lastBuyOrder.orderId
+          });
+        } catch (e) {
+          logger.error(
+            { e },
+            'The order could not be found or error occurred querying the order.'
+          );
+          const updatedNextCheck = moment().add(
+            checkOrderExecutePeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              e,
+              lastBuyOrder,
+              checkOrderExecutePeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The gird trade order could not be found or error occurred querying the order.'
+          );
+
+          // Set last order to be checked later
+          await updateGridTradeLastOrder(logger, symbol, 'buy', {
+            ...lastBuyOrder,
+            nextCheck: updatedNextCheck.format()
+          });
+
+          return data;
+        }
+
+        // If filled, then calculate average cost and quantity and save new last buy pirce.
+        if (orderResult.status === 'FILLED') {
+          logger.info(
+            { lastBuyOrder, saveLog: true },
+            'The grid trade order is filled. Caluclating last buy price...'
+          );
+
+          // Calculate last buy price
+          await calculateLastBuyPrice(logger, symbol, orderResult);
+
+          // Save grid trade to the database
+          await saveGridTrade(logger, data, {
+            ...lastBuyOrder,
+            ...orderResult
+          });
+
+          // Remove grid trade last order
+          await removeGridTradeLastOrder(logger, symbols, symbol, 'buy');
+
+          slackMessageOrderFilled(
+            logger,
+            symbol,
+            'buy',
+            lastBuyOrder,
+            orderResult,
+            notifyOrderExecute
+          );
+
+          // Lock symbol action configured seconds to avoid immediate action
+          await disableAction(
+            logger,
+            symbol,
+            {
+              disabledBy: 'buy filled order',
+              message:
+                'Disabled action after confirming filled grid trade order.',
+              canResume: false,
+              canRemoveLastBuyPrice: false
+            },
+            temporaryDisableActionAfterConfirmingOrder
+          );
+        } else if (removeStatuses.includes(orderResult.status) === true) {
+          logger.info(
+            {
+              orderResult,
+              saveLog: true
+            },
+            `The order status "${orderResult.status}" is no longer valid. Delete the order to stop monitoring.`
+          );
+
+          // If order is no longer available, then delete from cache
+          await removeGridTradeLastOrder(logger, symbols, symbol, 'buy');
+
+          slackMessageOrderDeleted(
+            logger,
+            symbol,
+            'buy',
+            lastBuyOrder,
+            orderResult,
+            notifyOrderExecute
+          );
+        } else {
+          // If not filled, update next check time
+          const updatedNextCheck = moment().add(
+            checkOrderExecutePeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              orderResult,
+              checkOrderExecutePeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The grid trade order is not filled.'
+          );
+
+          await updateGridTradeLastOrder(logger, symbol, 'buy', {
+            ...orderResult,
+            currentGridTradeIndex: lastBuyOrder.currentGridTradeIndex,
+            nextCheck: updatedNextCheck.format()
+          });
+        }
+      } else {
+        logger.info(
+          { lastBuyOrder, nextCheck, currentTime: moment() },
+          'Skip checking the grid trade last buy order'
+        );
+      }
     }
   }
 
@@ -300,6 +474,7 @@ const execute = async (logger, rawData) => {
         symbol,
         'sell',
         lastSellOrder,
+        lastSellOrder,
         notifyOrderExecute
       );
 
@@ -315,22 +490,124 @@ const execute = async (logger, rawData) => {
         },
         temporaryDisableActionAfterConfirmingOrder
       );
-    } else if (removeStatuses.includes(lastSellOrder.status)) {
-      // If order is no longer available, then delete from cache
-      await removeGridTradeLastOrder(logger, symbols, symbol, 'sell');
-
-      slackMessageOrderDeleted(
-        logger,
-        symbol,
-        'sell',
-        lastSellOrder,
-        notifyOrderExecute
-      );
     } else {
-      logger.info(
-        { lastSellOrder, currentTime: moment() },
-        'Skip checking the grid trade last sell order'
-      );
+      // If not filled, check orders is time to check or not
+      const nextCheck = _.get(lastSellOrder, 'nextCheck', null);
+
+      if (moment(nextCheck) < moment()) {
+        // Check orders whether it's filled or not
+        let orderResult;
+        try {
+          orderResult = await binance.client.getOrder({
+            symbol,
+            orderId: lastSellOrder.orderId
+          });
+        } catch (e) {
+          logger.error(
+            { e },
+            'The order could not be found or error occurred querying the order.'
+          );
+          const updatedNextCheck = moment().add(
+            checkOrderExecutePeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              e,
+              lastSellOrder,
+              checkOrderExecutePeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The grid trade order could not be found or error occurred querying the order.'
+          );
+
+          // Set last order to be checked later
+          await updateGridTradeLastOrder(logger, symbol, 'sell', {
+            ...lastSellOrder,
+            nextCheck: updatedNextCheck.format()
+          });
+
+          return data;
+        }
+
+        // If filled, then calculate average cost and quantity and save new last buy pirce.
+        if (orderResult.status === 'FILLED') {
+          logger.info({ lastSellOrder }, 'The order is filled.');
+
+          // Save grid trade to the database
+          await saveGridTrade(logger, data, {
+            ...lastSellOrder,
+            ...orderResult
+          });
+
+          // Remove grid trade last order
+          await removeGridTradeLastOrder(logger, symbols, symbol, 'sell');
+
+          slackMessageOrderFilled(
+            logger,
+            symbol,
+            'sell',
+            lastSellOrder,
+            orderResult,
+            notifyOrderExecute
+          );
+
+          // Lock symbol action configured seconds to avoid immediate action
+          await disableAction(
+            logger,
+            symbol,
+            {
+              disabledBy: 'sell filled order',
+              message:
+                'Disabled action after confirming filled grid trade order.',
+              canResume: false,
+              canRemoveLastBuyPrice: true
+            },
+            temporaryDisableActionAfterConfirmingOrder
+          );
+        } else if (removeStatuses.includes(orderResult.status) === true) {
+          // If order is no longer available, then delete from cache
+          await removeGridTradeLastOrder(logger, symbols, symbol, 'sell');
+
+          slackMessageOrderDeleted(
+            logger,
+            symbol,
+            'sell',
+            lastSellOrder,
+            orderResult,
+            notifyOrderExecute
+          );
+        } else {
+          // If not filled, update next check time
+          const updatedNextCheck = moment().add(
+            checkOrderExecutePeriod,
+            'seconds'
+          );
+
+          logger.info(
+            {
+              orderResult,
+              checkOrderExecutePeriod,
+              nextCheck: updatedNextCheck.format(),
+              saveLog: true
+            },
+            'The grid trade order is not filled.'
+          );
+
+          await updateGridTradeLastOrder(logger, symbol, 'sell', {
+            ...orderResult,
+            currentGridTradeIndex: lastSellOrder.currentGridTradeIndex,
+            nextCheck: updatedNextCheck.format()
+          });
+        }
+      } else {
+        logger.info(
+          { lastSellOrder, nextCheck, currentTime: moment() },
+          'Skip checking the grid trade last buy order'
+        );
+      }
     }
   }
 

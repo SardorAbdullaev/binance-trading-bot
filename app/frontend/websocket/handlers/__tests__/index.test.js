@@ -17,8 +17,7 @@ describe('index', () => {
       handleManualTrade: expect.any(Function),
       handleCancelOrder: expect.any(Function),
       handleDustTransferGet: expect.any(Function),
-      handleDustTransferExecute: expect.any(Function),
-      handleExchangeSymbolsGet: expect.any(Function)
+      handleDustTransferExecute: expect.any(Function)
     });
   });
 });

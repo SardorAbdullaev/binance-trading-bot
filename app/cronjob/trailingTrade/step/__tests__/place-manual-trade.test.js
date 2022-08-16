@@ -7,10 +7,11 @@ describe('place-manual-trade.js', () => {
   let binanceMock;
   let slackMock;
   let loggerMock;
+  let cacheMock;
 
-  let mockGetAccountInfo;
-  let mockGetAPILimit;
   let mockGetAndCacheOpenOrdersForSymbol;
+  let mockGetAccountInfoFromAPI;
+  let mockGetAPILimit;
 
   let mockSaveManualOrder;
 
@@ -23,21 +24,21 @@ describe('place-manual-trade.js', () => {
       () => () => jest.requireActual('moment')('2020-01-01T00:00:00.000Z')
     );
 
-    const { binance, slack, logger } = require('../../../../helpers');
+    const { binance, slack, cache, logger } = require('../../../../helpers');
 
     binanceMock = binance;
     slackMock = slack;
     loggerMock = logger;
+    cacheMock = cache;
 
+    cacheMock.hset = jest.fn().mockResolvedValue(true);
     slackMock.sendMessage = jest.fn().mockResolvedValue(true);
     binanceMock.client.order = jest.fn().mockResolvedValue(true);
 
-    mockGetAccountInfo = jest.fn().mockResolvedValue({
-      account: 'info'
-    });
-
-    mockGetAndCacheOpenOrdersForSymbol = jest.fn().mockResolvedValue([]);
-
+    mockGetAndCacheOpenOrdersForSymbol = jest.fn().mockReturnValue([]);
+    mockGetAccountInfoFromAPI = jest
+      .fn()
+      .mockResolvedValue({ account: 'info' });
     mockGetAPILimit = jest.fn().mockResolvedValue(10);
     mockSaveManualOrder = jest.fn().mockResolvedValue(true);
   });
@@ -45,9 +46,9 @@ describe('place-manual-trade.js', () => {
   describe('when symbol is locked', () => {
     beforeEach(async () => {
       jest.mock('../../../trailingTradeHelper/common', () => ({
-        getAccountInfo: mockGetAccountInfo,
-        getAPILimit: mockGetAPILimit,
-        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol
+        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol,
+        getAccountInfoFromAPI: mockGetAccountInfoFromAPI,
+        getAPILimit: mockGetAPILimit
       }));
 
       jest.mock('../../../trailingTradeHelper/order', () => ({
@@ -71,8 +72,8 @@ describe('place-manual-trade.js', () => {
       result = await step.execute(loggerMock, rawData);
     });
 
-    it('does not trigger getAndCacheOpenOrdersForSymbol', () => {
-      expect(mockGetAndCacheOpenOrdersForSymbol).not.toHaveBeenCalled();
+    it('does not trigger cache.hset', () => {
+      expect(cacheMock.hset).not.toHaveBeenCalled();
     });
 
     it('does not trigger saveManualOrder', () => {
@@ -97,9 +98,9 @@ describe('place-manual-trade.js', () => {
   describe('when action is not manual-trade', () => {
     beforeEach(async () => {
       jest.mock('../../../trailingTradeHelper/common', () => ({
-        getAccountInfo: mockGetAccountInfo,
-        getAPILimit: mockGetAPILimit,
-        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol
+        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol,
+        getAccountInfoFromAPI: mockGetAccountInfoFromAPI,
+        getAPILimit: mockGetAPILimit
       }));
 
       jest.mock('../../../trailingTradeHelper/order', () => ({
@@ -123,8 +124,8 @@ describe('place-manual-trade.js', () => {
       result = await step.execute(loggerMock, rawData);
     });
 
-    it('does not trigger getAndCacheOpenOrdersForSymbol', () => {
-      expect(mockGetAndCacheOpenOrdersForSymbol).not.toHaveBeenCalled();
+    it('does not trigger cache.hset', () => {
+      expect(cacheMock.hset).not.toHaveBeenCalled();
     });
 
     it('does not trigger saveManualOrder', () => {
@@ -721,7 +722,7 @@ describe('place-manual-trade.js', () => {
           }
         ]
       },
-      openOrders: null,
+      openOrders: [],
       expectedData: {
         symbol: 'BTCUSDT',
         action: 'manual-trade',
@@ -765,14 +766,12 @@ describe('place-manual-trade.js', () => {
       beforeEach(async () => {
         mockGetAndCacheOpenOrdersForSymbol = jest
           .fn()
-          .mockResolvedValue(
-            testData.openOrders !== null ? testData.openOrders : []
-          );
+          .mockResolvedValue(testData.openOrders);
 
         jest.mock('../../../trailingTradeHelper/common', () => ({
-          getAccountInfo: mockGetAccountInfo,
-          getAPILimit: mockGetAPILimit,
-          getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol
+          getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol,
+          getAccountInfoFromAPI: mockGetAccountInfoFromAPI,
+          getAPILimit: mockGetAPILimit
         }));
 
         jest.mock('../../../trailingTradeHelper/order', () => ({
@@ -818,7 +817,8 @@ describe('place-manual-trade.js', () => {
           'BTCUSDT',
           testData.orderResult.orderId,
           {
-            ...testData.orderResult
+            ...testData.orderResult,
+            nextCheck: expect.any(String)
           }
         );
       });
@@ -831,10 +831,12 @@ describe('place-manual-trade.js', () => {
 
   describe('when unknown order side/type is provided', () => {
     beforeEach(async () => {
+      mockGetAndCacheOpenOrdersForSymbol = jest.fn().mockResolvedValue([]);
+
       jest.mock('../../../trailingTradeHelper/common', () => ({
-        getAccountInfo: mockGetAccountInfo,
-        getAPILimit: mockGetAPILimit,
-        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol
+        getAndCacheOpenOrdersForSymbol: mockGetAndCacheOpenOrdersForSymbol,
+        getAccountInfoFromAPI: mockGetAccountInfoFromAPI,
+        getAPILimit: mockGetAPILimit
       }));
 
       jest.mock('../../../trailingTradeHelper/order', () => ({

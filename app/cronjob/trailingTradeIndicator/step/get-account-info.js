@@ -3,7 +3,7 @@ const moment = require('moment');
 
 const { cache, PubSub } = require('../../../helpers');
 
-const { getAccountInfo } = require('../../trailingTradeHelper/common');
+const { getAccountInfoFromAPI } = require('../../trailingTradeHelper/common');
 
 const isAccountInfoChanged = async (
   logger,
@@ -55,7 +55,7 @@ const execute = async (logger, rawData) => {
   const oldAccountInfo =
     JSON.parse(await cache.hget('trailing-trade-common', 'account-info')) || {};
 
-  const accountInfo = await getAccountInfo(logger);
+  const accountInfo = await getAccountInfoFromAPI(logger);
 
   await cache.hset(
     'trailing-trade-common',
@@ -65,7 +65,7 @@ const execute = async (logger, rawData) => {
 
   // Determine to reset binance websocket
   if (await isAccountInfoChanged(logger, { oldAccountInfo, accountInfo })) {
-    PubSub.publish('reset-all-websockets', true);
+    PubSub.publish('reset-binance-websocket', true);
   }
 
   data.accountInfo = accountInfo;

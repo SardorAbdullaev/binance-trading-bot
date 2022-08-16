@@ -1,13 +1,11 @@
 /* eslint-disable no-await-in-loop */
 const moment = require('moment');
 
-const _ = require('lodash');
 const { binance } = require('../../../helpers');
 const {
-  getAccountInfo,
-  updateAccountInfo,
-  saveOverrideAction,
-  getAndCacheOpenOrdersForSymbol
+  getAndCacheOpenOrdersForSymbol,
+  getAccountInfoFromAPI,
+  saveOverrideAction
 } = require('../../trailingTradeHelper/common');
 
 /**
@@ -59,8 +57,7 @@ const execute = async (logger, rawData) => {
     isLocked,
     openOrders,
     buy: { limitPrice: buyLimitPrice },
-    sell: { limitPrice: sellLimitPrice },
-    symbolInfo: { quoteAsset, baseAsset }
+    sell: { limitPrice: sellLimitPrice }
   } = data;
 
   if (isLocked) {
@@ -110,7 +107,7 @@ const execute = async (logger, rawData) => {
           );
 
           // Refresh account info
-          data.accountInfo = await getAccountInfo(logger);
+          data.accountInfo = await getAccountInfoFromAPI(logger);
 
           data.action = 'buy-order-checking';
 
@@ -133,28 +130,8 @@ const execute = async (logger, rawData) => {
           // Set action as buy
           data.action = 'buy';
 
-          const orderAmount = order.origQty * order.price;
-
-          // Immediately update the balance of "quote" asset when the order is canceled so that
-          // we don't have to wait for the websocket because the next action is buy
-          const balances = [
-            {
-              asset: quoteAsset,
-              free:
-                _.toNumber(data.quoteAssetBalance.free) +
-                _.toNumber(orderAmount),
-              locked:
-                _.toNumber(data.quoteAssetBalance.locked) -
-                _.toNumber(orderAmount)
-            }
-          ];
-
-          // Refresh account info
-          data.accountInfo = await updateAccountInfo(
-            logger,
-            balances,
-            moment().utc().format()
-          );
+          // Get account information again because the order is cancelled
+          data.accountInfo = await getAccountInfoFromAPI(logger);
         }
       } else {
         logger.info(
@@ -191,7 +168,7 @@ const execute = async (logger, rawData) => {
           );
 
           // Refresh account info
-          data.accountInfo = await getAccountInfo(logger);
+          data.accountInfo = await getAccountInfoFromAPI(logger);
 
           data.action = 'sell-order-checking';
         } else {
@@ -201,26 +178,8 @@ const execute = async (logger, rawData) => {
           // Set action as sell
           data.action = 'sell';
 
-          // Immediately update the balance of "base" asset when the order is canceled so that
-          // we don't have to wait for the websocket because the next action is sell
-          const balances = [
-            {
-              asset: baseAsset,
-              free:
-                _.toNumber(data.baseAssetBalance.free) +
-                _.toNumber(order.origQty),
-              locked:
-                _.toNumber(data.baseAssetBalance.locked) -
-                _.toNumber(order.origQty)
-            }
-          ];
-
-          // Refresh account info
-          data.accountInfo = await updateAccountInfo(
-            logger,
-            balances,
-            moment().utc().format()
-          );
+          // Get account information again because the order is cancelled
+          data.accountInfo = await getAccountInfoFromAPI(logger);
         }
       } else {
         logger.info(

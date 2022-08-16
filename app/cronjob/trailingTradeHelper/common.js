@@ -16,8 +16,9 @@ const isValidCachedExchangeSymbols = exchangeSymbols =>
  *  If not cached, retrieve exchange info from API and cache it.
  *
  * @param {*} logger
+ * @param {*} globalConfiguration
  */
-const cacheExchangeSymbols = async logger => {
+const cacheExchangeSymbols = async (logger, _globalConfiguration) => {
   const cachedExchangeSymbols =
     JSON.parse(await cache.hget('trailing-trade-common', 'exchange-symbols')) ||
     {};
@@ -77,16 +78,12 @@ const cacheExchangeSymbols = async logger => {
   logger.info({ exchangeSymbols }, 'Saved exchange symbols to cache');
 };
 
-const getCachedExchangeSymbols = async _logger =>
-  JSON.parse(await cache.hget('trailing-trade-common', 'exchange-symbols')) ||
-  {};
-
 /**
- * Add estimatedBTC and canDustTransfer flags to balance
+ * Add estimatedBTC and canDustTransfer flags to balances
  *  - Leave this function for future reference
  *
- * @param {*} _logger
- * @param {*} rawAccountInfo
+ * @param {*} logger
+ * @param {*} accountInfo
  * @returns
  */
 const extendBalancesWithDustTransfer = async (_logger, rawAccountInfo) => {
@@ -333,7 +330,7 @@ const lockSymbol = async (logger, symbol, ttl = 5) => {
 /**
  * Check if symbol is locked
  *
- * @param {*} logger
+ * @param {*} _logger
  * @param {*} symbol
  * @returns
  */
@@ -436,7 +433,7 @@ const isExceedAPILimit = logger => {
 /**
  * Get override data for Symbol
  *
- * @param {*} _logger
+ * @param {*} logger
  * @param {*} symbol
  * @returns
  */
@@ -452,7 +449,7 @@ const getOverrideDataForSymbol = async (_logger, symbol) => {
 /**
  * Remove override data for Symbol
  *
- * @param {*} logger
+ * @param {*} _logger
  * @param {*} symbol
  * @returns
  */
@@ -465,7 +462,7 @@ const removeOverrideDataForSymbol = async (logger, symbol) => {
 /**
  * Get override data for Indicator
  *
- * @param {*} _logger
+ * @param {*} logger
  * @param {*} key
  * @returns
  */
@@ -768,7 +765,7 @@ const saveOverrideAction = async (
   overrideReason
 ) => {
   logger.info(
-    { symbol, overrideData, overrideReason, saveLog: true },
+    { overrideData, overrideReason, saveLog: true },
     `The override action is saved. Reason: ${overrideReason}`
   );
 
@@ -800,7 +797,7 @@ const saveOverrideAction = async (
  * Save override action for indicator
  *
  * @param {*} logger
- * @param {*} type
+ * @param {*} symbol
  * @param {*} overrideData
  * @param {*} overrideReason
  */
@@ -834,256 +831,8 @@ const saveOverrideIndicatorAction = async (
   }
 };
 
-/**
- * Save or update symbol candle based on time
- *
- * @param {*} logger
- * @param collectionName
- * @param candle
- */
-const saveCandle = async (logger, collectionName, candle) => {
-  const { key, interval, time } = candle;
-  await mongo.upsertOne(
-    logger,
-    collectionName,
-    {
-      key,
-      time,
-      interval
-    },
-    candle
-  );
-};
-
-/**
- * Update account info with new one
- *
- * @param {*} logger
- * @param balances
- * @param lastAccountUpdate
- */
-const updateAccountInfo = async (logger, balances, lastAccountUpdate) => {
-  logger.info({ balances }, 'Updating account balances');
-  const accountInfo = await getAccountInfo(logger);
-
-  const mergedBalances = _.merge(
-    _.keyBy(accountInfo.balances, 'asset'),
-    _.keyBy(balances, 'asset')
-  );
-  accountInfo.balances = _.reduce(
-    _.values(mergedBalances),
-    (acc, b) => {
-      const balance = b;
-      if (+balance.free > 0 || +balance.locked > 0) {
-        acc.push(balance);
-      }
-
-      return acc;
-    },
-    []
-  );
-
-  // set updateTime manually because we are updating account info from websocket
-  accountInfo.updateTime = lastAccountUpdate;
-
-  await cache.hset(
-    'trailing-trade-common',
-    'account-info',
-    JSON.stringify(accountInfo)
-  );
-
-  return accountInfo;
-};
-
-const getCacheTrailingTradeSymbols = async (
-  logger,
-  sortByDesc,
-  sortByParam,
-  page,
-  symbolsPerPage,
-  searchKeyword
-) => {
-  const match = {};
-
-  if (searchKeyword) {
-    match.symbol = {
-      $regex: searchKeyword,
-      $options: 'i'
-    };
-  }
-
-  const sortBy = sortByParam || 'default';
-  const sortDirection = sortByDesc === true ? -1 : 1;
-
-  logger.info({ sortBy, sortDirection }, 'latest');
-
-  let sortField = {
-    $cond: {
-      if: { $gt: [{ $size: '$buy.openOrders' }, 0] },
-      then: {
-        $multiply: [
-          {
-            $add: [
-              {
-                $let: {
-                  vars: {
-                    buyOpenOrder: {
-                      $arrayElemAt: ['$buy.openOrders', 0]
-                    }
-                  },
-                  in: '$buyOpenOrder.differenceToCancel'
-                }
-              },
-              3000
-            ]
-          },
-          -10
-        ]
-      },
-      else: {
-        $cond: {
-          if: { $gt: [{ $size: '$sell.openOrders' }, 0] },
-          then: {
-            $multiply: [
-              {
-                $add: [
-                  {
-                    $let: {
-                      vars: {
-                        sellOpenOrder: {
-                          $arrayElemAt: ['$sell.openOrders', 0]
-                        }
-                      },
-                      in: '$sellOpenOrder.differenceToCancel'
-                    }
-                  },
-                  2000
-                ]
-              },
-              -10
-            ]
-          },
-          else: {
-            $cond: {
-              if: {
-                $eq: ['$sell.difference', null]
-              },
-              then: '$buy.difference',
-              else: {
-                $multiply: [{ $add: ['$sell.difference', 1000] }, -10]
-              }
-            }
-          }
-        }
-      }
-    }
-  };
-
-  if (sortBy === 'buy-difference') {
-    sortField = {
-      $cond: {
-        if: {
-          $eq: ['$buy.difference', null]
-        },
-        then: sortByDesc ? -999 : 999,
-        else: '$buy.difference'
-      }
-    };
-  }
-
-  if (sortBy === 'sell-profit') {
-    sortField = {
-      $cond: {
-        if: {
-          $eq: ['$sell.currentProfitPercentage', null]
-        },
-        then: sortByDesc ? -999 : 999,
-        else: '$sell.currentProfitPercentage'
-      }
-    };
-  }
-
-  if (sortBy === 'alpha') {
-    sortField = '$symbol';
-  }
-
-  const trailingTradeCacheQuery = [
-    {
-      $match: match
-    },
-    {
-      $project: {
-        symbol: '$symbol',
-        lastCandle: '$lastCandle',
-        symbolInfo: '$symbolInfo',
-        symbolConfiguration: '$symbolConfiguration',
-        baseAssetBalance: '$baseAssetBalance',
-        quoteAssetBalance: '$quoteAssetBalance',
-        buy: '$buy',
-        sell: '$sell',
-        tradingView: '$tradingView',
-        overrideData: '$overrideData',
-        sortField
-      }
-    },
-    { $sort: { sortField: sortDirection } },
-    { $skip: (page - 1) * symbolsPerPage },
-    { $limit: symbolsPerPage }
-  ];
-
-  return mongo.aggregate(
-    logger,
-    'trailing-trade-cache',
-    trailingTradeCacheQuery
-  );
-};
-
-const getCacheTrailingTradeTotalProfitAndLoss = logger =>
-  mongo.aggregate(logger, 'trailing-trade-cache', [
-    {
-      $group: {
-        _id: '$quoteAssetBalance.asset',
-        amount: {
-          $sum: {
-            $multiply: ['$baseAssetBalance.total', '$sell.lastBuyPrice']
-          }
-        },
-        profit: { $sum: '$sell.currentProfit' },
-        estimatedBalance: { $sum: '$baseAssetBalance.estimatedValue' }
-      }
-    },
-    {
-      $project: {
-        asset: '$_id',
-        amount: '$amount',
-        profit: '$profit',
-        estimatedBalance: '$estimatedBalance'
-      }
-    }
-  ]);
-
-const getCacheTrailingTradeQuoteEstimates = logger =>
-  mongo.aggregate(logger, 'trailing-trade-cache', [
-    {
-      $match: {
-        'baseAssetBalance.estimatedValue': {
-          $gt: 0
-        }
-      }
-    },
-    {
-      $project: {
-        baseAsset: '$symbolInfo.baseAsset',
-        quoteAsset: '$symbolInfo.quoteAsset',
-        estimatedValue: '$baseAssetBalance.estimatedValue',
-        tickSize: '$symbolInfo.filterPrice.tickSize'
-      }
-    }
-  ]);
-
 module.exports = {
   cacheExchangeSymbols,
-  getCachedExchangeSymbols,
   getAccountInfoFromAPI,
   getAccountInfo,
   extendBalancesWithDustTransfer,
@@ -1114,10 +863,5 @@ module.exports = {
   getNumberOfOpenTrades,
   saveOrderStats,
   saveOverrideAction,
-  saveOverrideIndicatorAction,
-  saveCandle,
-  updateAccountInfo,
-  getCacheTrailingTradeSymbols,
-  getCacheTrailingTradeTotalProfitAndLoss,
-  getCacheTrailingTradeQuoteEstimates
+  saveOverrideIndicatorAction
 };

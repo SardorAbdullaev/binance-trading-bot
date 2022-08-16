@@ -8,6 +8,7 @@ describe('server-cronjob', () => {
   let mockTaskRunning = false;
 
   let mockExecuteAlive;
+  let mockExecuteTrailingTrade;
   let mockExecuteTrailingTradeIndicator;
 
   describe('cronjob running fine', () => {
@@ -18,10 +19,12 @@ describe('server-cronjob', () => {
       cache.hset = jest.fn().mockResolvedValue(true);
 
       mockExecuteAlive = jest.fn().mockResolvedValue(true);
+      mockExecuteTrailingTrade = jest.fn().mockResolvedValue(true);
       mockExecuteTrailingTradeIndicator = jest.fn().mockResolvedValue(true);
 
       jest.mock('../cronjob', () => ({
         executeAlive: mockExecuteAlive,
+        executeTrailingTrade: mockExecuteTrailingTrade,
         executeTrailingTradeIndicator: mockExecuteTrailingTradeIndicator
       }));
 
@@ -97,6 +100,67 @@ describe('server-cronjob', () => {
 
         it('triggers executeAlive', () => {
           expect(mockExecuteAlive).toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe('trailingTrade', () => {
+      beforeEach(async () => {
+        config.get = jest.fn(key => {
+          switch (key) {
+            case 'jobs.trailingTrade.enabled':
+              return true;
+            case 'jobs.trailingTrade.cronTime':
+              return '* * * * * *';
+            case 'tz':
+              return 'Australia/Melbourne';
+            default:
+              return `value-${key}`;
+          }
+        });
+      });
+
+      describe('when task is already running', () => {
+        beforeEach(() => {
+          mockTaskRunning = true;
+          const { runCronjob } = require('../server-cronjob');
+          runCronjob(logger);
+        });
+
+        it('initialise CronJob', () => {
+          expect(mockCronJob).toHaveBeenCalledWith(
+            '* * * * * *',
+            expect.any(Function),
+            null,
+            false,
+            'Australia/Melbourne'
+          );
+        });
+
+        it('does not trigger executeTrailingTrade', () => {
+          expect(mockExecuteTrailingTrade).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when task is not running', () => {
+        beforeEach(() => {
+          mockTaskRunning = false;
+          const { runCronjob } = require('../server-cronjob');
+          runCronjob(logger);
+        });
+
+        it('initialise CronJob', () => {
+          expect(mockCronJob).toHaveBeenCalledWith(
+            '* * * * * *',
+            expect.any(Function),
+            null,
+            false,
+            'Australia/Melbourne'
+          );
+        });
+
+        it('triggers executeTrailingTrade', () => {
+          expect(mockExecuteTrailingTrade).toHaveBeenCalled();
         });
       });
     });
@@ -183,8 +247,8 @@ describe('server-cronjob', () => {
         expect(mockExecuteAlive).not.toHaveBeenCalled();
       });
 
-      it('does not trigger executeTrailingTradeIndicator', () => {
-        expect(mockExecuteTrailingTradeIndicator).not.toHaveBeenCalled();
+      it('does not trigger executeTrailingTrade', () => {
+        expect(mockExecuteTrailingTrade).not.toHaveBeenCalled();
       });
     });
   });
@@ -198,12 +262,14 @@ describe('server-cronjob', () => {
       cache.hset = jest.fn().mockResolvedValue(true);
 
       mockExecuteAlive = jest.fn().mockResolvedValue(true);
-      mockExecuteTrailingTradeIndicator = jest.fn().mockImplementation(() => {
+      mockExecuteTrailingTrade = jest.fn().mockImplementation(() => {
         setTimeout(() => Promise.resolve(true), 30000);
       });
+      mockExecuteTrailingTradeIndicator = jest.fn().mockResolvedValue(true);
 
       jest.mock('../cronjob', () => ({
         executeAlive: mockExecuteAlive,
+        executeTrailingTrade: mockExecuteTrailingTrade,
         executeTrailingTradeIndicator: mockExecuteTrailingTradeIndicator
       }));
 
@@ -223,9 +289,9 @@ describe('server-cronjob', () => {
 
       config.get = jest.fn(key => {
         switch (key) {
-          case 'jobs.trailingTradeIndicator.enabled':
+          case 'jobs.trailingTrade.enabled':
             return true;
-          case 'jobs.trailingTradeIndicator.cronTime':
+          case 'jobs.trailingTrade.cronTime':
             return '* * * * * *';
           case 'tz':
             return 'Australia/Melbourne';
@@ -254,8 +320,8 @@ describe('server-cronjob', () => {
         );
       });
 
-      it('triggers executeTrailingTradeIndicator', () => {
-        expect(mockExecuteTrailingTradeIndicator).toHaveBeenCalled();
+      it('triggers executeTrailingTrade', () => {
+        expect(mockExecuteTrailingTrade).toHaveBeenCalled();
       });
     });
   });

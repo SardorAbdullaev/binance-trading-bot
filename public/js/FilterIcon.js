@@ -11,10 +11,7 @@ class FilterIcon extends React.Component {
 
     this.state = {
       showFilterModal: false,
-      selectedSortOption: {
-        sortBy: 'default',
-        sortByDesc: false
-      },
+      selectedSortOption: 'default',
       searchKeyword: ''
     };
 
@@ -73,7 +70,7 @@ class FilterIcon extends React.Component {
     });
     this.props.setSortOption(newSortOption);
     // Save to local storage
-    localStorage.setItem('selectedSortOption', JSON.stringify(newSortOption));
+    localStorage.setItem('selectedSortOption', newSortOption);
   }
 
   setSearchKeyword(event) {
@@ -104,14 +101,11 @@ class FilterIcon extends React.Component {
         <div className='col-xs-12 col-sm-6' key={'sort-option-' + index}>
           <Button
             variant={
-              option.sortBy === selectedSortOption.sortBy &&
-              option.sortByDesc === selectedSortOption.sortByDesc
-                ? 'primary'
-                : 'secondary'
+              option.sortBy === selectedSortOption ? 'primary' : 'secondary'
             }
             size='sm'
             className='btn-block mb-1'
-            onClick={() => this.setSortOption(option)}>
+            onClick={() => this.setSortOption(option.sortBy)}>
             {option.label}
           </Button>
         </div>

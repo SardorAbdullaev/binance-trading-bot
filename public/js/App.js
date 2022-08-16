@@ -22,51 +22,26 @@ class App extends React.Component {
       publicURL: '',
       dustTransfer: {},
       availableSortOptions: [
-        { sortBy: 'default', sortByDesc: false, label: 'Default' },
-        {
-          sortBy: 'buy-difference',
-          sortByDesc: false,
-          label: 'Buy - Difference (asc)'
-        },
-        {
-          sortBy: 'buy-difference',
-          sortByDesc: true,
-          label: 'Buy - Difference (desc)'
-        },
-        {
-          sortBy: 'sell-profit',
-          sortByDesc: false,
-          label: 'Sell - Profit (asc)'
-        },
-        {
-          sortBy: 'sell-profit',
-          sortByDesc: true,
-          label: 'Sell - Profit (desc)'
-        },
-        { sortBy: 'alpha', sortByDesc: false, label: 'Alphabetical (asc)' },
-        { sortBy: 'alpha', sortByDesc: true, label: 'Alphabetical (desc)' }
+        { sortBy: 'default', label: 'Default' },
+        { sortBy: 'buy-difference-asc', label: 'Buy - Difference (asc)' },
+        { sortBy: 'buy-difference-desc', label: 'Buy - Difference (desc)' },
+        { sortBy: 'sell-profit-asc', label: 'Sell - Profit (asc)' },
+        { sortBy: 'sell-profit-desc', label: 'Sell - Profit (desc)' },
+        { sortBy: 'alpha-asc', label: 'Alphabetical (asc)' },
+        { sortBy: 'alpha-desc', label: 'Alphabetical (desc)' }
       ],
-      selectedSortOption: {
-        sortBy: 'default',
-        sortByDesc: false
-      },
+      selectedSortOption: 'default',
       searchKeyword: '',
       isLoaded: false,
       isAuthenticated: false,
       botOptions: {},
-      authToken: localStorage.getItem('authToken') || '',
-      totalProfitAndLoss: {},
-      streamsCount: 0,
-      symbolsCount: 0,
-      page: 1,
-      totalPages: 1
+      authToken: localStorage.getItem('authToken') || ''
     };
     this.requestLatest = this.requestLatest.bind(this);
     this.connectWebSocket = this.connectWebSocket.bind(this);
     this.sendWebSocket = this.sendWebSocket.bind(this);
     this.setSortOption = this.setSortOption.bind(this);
     this.setSearchKeyword = this.setSearchKeyword.bind(this);
-    this.setPage = this.setPage.bind(this);
 
     this.toast = this.toast.bind(this);
 
@@ -101,12 +76,7 @@ class App extends React.Component {
   }
 
   requestLatest() {
-    this.sendWebSocket('latest', {
-      page: this.state.page,
-      searchKeyword: this.state.searchKeyword,
-      sortBy: this.state.selectedSortOption.sortBy,
-      sortByDesc: this.state.selectedSortOption.sortByDesc
-    });
+    this.sendWebSocket('latest');
   }
 
   toast({ type, title }) {
@@ -163,20 +133,16 @@ class App extends React.Component {
             {}
           ),
           closedTrades: _.get(response, ['common', 'closedTrades'], []),
-          symbols: _.get(response, ['stats', 'symbols'], []),
+          symbols: sortingSymbols(_.get(response, ['stats', 'symbols'], []), {
+            selectedSortOption: self.state.selectedSortOption,
+            searchKeyword: self.state.searchKeyword
+          }),
           packageVersion: _.get(response, ['common', 'version'], ''),
           gitHash: _.get(response, ['common', 'gitHash'], ''),
+          exchangeSymbols: _.get(response, ['common', 'exchangeSymbols'], []),
           accountInfo: _.get(response, ['common', 'accountInfo'], {}),
           publicURL: _.get(response, ['common', 'publicURL'], ''),
-          apiInfo: _.get(response, ['common', 'apiInfo'], {}),
-          totalProfitAndLoss: _.get(
-            response,
-            ['common', 'totalProfitAndLoss'],
-            ''
-          ),
-          streamsCount: _.get(response, ['common', 'streamsCount'], 0),
-          symbolsCount: _.get(response, ['common', 'symbolsCount'], 0),
-          totalPages: _.get(response, ['common', 'totalPages'], 1)
+          apiInfo: _.get(response, ['common', 'apiInfo'], {})
         });
       }
 
@@ -190,12 +156,6 @@ class App extends React.Component {
       if (response.type === 'dust-transfer-get-result') {
         self.setState({
           dustTransfer: response.dustTransfer
-        });
-      }
-
-      if (response.type === 'exchange-symbols-get-result') {
-        self.setState({
-          exchangeSymbols: response.exchangeSymbols
         });
       }
     };
@@ -238,31 +198,13 @@ class App extends React.Component {
 
   setSearchKeyword(searchKeyword) {
     this.setState({
-      searchKeyword,
-      page: 1
-    });
-  }
-
-  setPage(newPage) {
-    this.setState({
-      page: newPage
+      searchKeyword
     });
   }
 
   componentDidMount() {
-    let selectedSortOption = {
-      sortBy: 'default',
-      sortByDesc: false
-    };
-
-    try {
-      selectedSortOption = JSON.parse(
-        localStorage.getItem('selectedSortOption')
-      ) || {
-        sortBy: 'default',
-        sortByDesc: false
-      };
-    } catch (e) {}
+    const selectedSortOption =
+      localStorage.getItem('selectedSortOption') || 'default';
 
     this.setState({
       selectedSortOption
@@ -291,18 +233,13 @@ class App extends React.Component {
       closedTrades,
       publicURL,
       apiInfo,
-      streamsCount,
-      symbolsCount,
       dustTransfer,
       availableSortOptions,
       selectedSortOption,
       searchKeyword,
       isAuthenticated,
       botOptions,
-      isLoaded,
-      totalProfitAndLoss,
-      page,
-      totalPages
+      isLoaded
     } = this.state;
 
     if (isLoaded === false) {
@@ -333,60 +270,14 @@ class App extends React.Component {
       );
     });
 
-    const paginationItems = [];
-
-    paginationItems.push(
-      <Pagination.First
-        key='first'
-        disabled={page === 1 || totalPages === 1}
-        onClick={() => this.setPage(1)}
-      />
-    );
-    paginationItems.push(
-      <Pagination.Prev
-        key='pagination-item-prev'
-        onClick={() => this.setPage(page - 1)}
-        disabled={page === 1 || totalPages === 1}
-      />
-    );
-    [...Array(3).keys()].forEach(index => {
-      if (page === 1 && index === 0) {
-        paginationItems.push(
-          <Pagination.Item
-            active
-            key={`pagination-item-${index}`}
-            onClick={() => this.setPage(page)}>
-            {page}
-          </Pagination.Item>
-        );
-      } else {
-        const pageNum = page === 1 ? page + index : page + index - 1;
-        paginationItems.push(
-          <Pagination.Item
-            active={pageNum === page}
-            disabled={pageNum > totalPages}
-            key={`pagination-item-${index}`}
-            onClick={() => this.setPage(pageNum)}>
-            {pageNum}
-          </Pagination.Item>
-        );
-      }
+    const symbolEstimates = symbols.map(symbol => {
+      return {
+        baseAsset: symbol.symbolInfo.baseAsset,
+        quoteAsset: symbol.symbolInfo.quoteAsset,
+        estimatedValue: symbol.baseAssetBalance.estimatedValue,
+        tickSize: symbol.symbolInfo.filterPrice.tickSize
+      };
     });
-    paginationItems.push(
-      <Pagination.Next
-        key='pagination-item-next'
-        onClick={() => this.setPage(page + 1)}
-        disabled={page === totalPages || page >= totalPages}
-      />
-    );
-    const lastPage = totalPages;
-    paginationItems.push(
-      <Pagination.Last
-        key='last'
-        disabled={page === totalPages || page >= totalPages}
-        onClick={() => this.setPage(lastPage)}
-      />
-    );
 
     return (
       <React.Fragment>
@@ -410,6 +301,7 @@ class App extends React.Component {
                 accountInfo={accountInfo}
                 dustTransfer={dustTransfer}
                 sendWebSocket={this.sendWebSocket}
+                quoteEstimates={symbolEstimates}
               />
               <ProfitLossWrapper
                 isAuthenticated={isAuthenticated}
@@ -417,18 +309,13 @@ class App extends React.Component {
                 closedTradesSetting={closedTradesSetting}
                 closedTrades={closedTrades}
                 sendWebSocket={this.sendWebSocket}
-                totalProfitAndLoss={totalProfitAndLoss}
+                symbolEstimates={symbolEstimates}
               />
               <OrderStats orderStats={orderStats} />
             </div>
             <div className='coin-wrappers'>{coinWrappers}</div>
-            <Pagination>{paginationItems}</Pagination>
             <div className='app-body-footer-wrapper'>
-              <Status
-                apiInfo={apiInfo}
-                streamsCount={streamsCount}
-                symbolsCount={symbolsCount}
-              />
+              <Status apiInfo={apiInfo} />
             </div>
           </div>
         ) : (

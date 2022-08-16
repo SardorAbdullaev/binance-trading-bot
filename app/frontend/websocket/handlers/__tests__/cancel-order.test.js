@@ -6,7 +6,6 @@ describe('cancel-order.js', () => {
   let loggerMock;
 
   let mockSaveOverrideAction;
-  let mockExecuteTrailingTrade;
 
   beforeEach(() => {
     jest.clearAllMocks().resetModules();
@@ -18,14 +17,9 @@ describe('cancel-order.js', () => {
     };
 
     mockSaveOverrideAction = jest.fn().mockResolvedValue(true);
-    mockExecuteTrailingTrade = jest.fn().mockResolvedValue(true);
 
     jest.mock('../../../../cronjob/trailingTradeHelper/common', () => ({
       saveOverrideAction: mockSaveOverrideAction
-    }));
-
-    jest.mock('../../../../cronjob', () => ({
-      executeTrailingTrade: mockExecuteTrailingTrade
     }));
   });
 
@@ -56,13 +50,6 @@ describe('cancel-order.js', () => {
         triggeredBy: 'user'
       },
       'Cancelling the order action has been received. Wait for cancelling the order.'
-    );
-  });
-
-  it('triggers executeTrailingTrade', () => {
-    expect(mockExecuteTrailingTrade).toHaveBeenCalledWith(
-      loggerMock,
-      'BTCUSDT'
     );
   });
 

@@ -14,6 +14,9 @@ describe('trailingTradeIndicator', () => {
   let mockGetSymbolConfiguration;
   let mockGetSymbolInfo;
   let mockGetOverrideAction;
+  let mockGetAccountInfo;
+  let mockGetIndicators;
+  let mockGetOpenOrders;
   let mockExecuteDustTransfer;
   let mockGetClosedTrades;
   let mockGetOrderStats;
@@ -97,6 +100,31 @@ describe('trailingTradeIndicator', () => {
         }
       }));
 
+    mockGetAccountInfo = jest.fn().mockImplementation((_logger, rawData) => ({
+      ...rawData,
+      ...{
+        accountInfo: {
+          account: 'information'
+        }
+      }
+    }));
+
+    mockGetIndicators = jest.fn().mockImplementation((_logger, rawData) => ({
+      ...rawData,
+      ...{
+        indicators: {
+          some: 'value'
+        }
+      }
+    }));
+
+    mockGetOpenOrders = jest.fn().mockImplementation((_logger, rawData) => ({
+      ...rawData,
+      ...{
+        openOrders: [{ orderId: 1 }]
+      }
+    }));
+
     mockExecuteDustTransfer = jest
       .fn()
       .mockImplementation((_logger, rawData) => ({
@@ -140,6 +168,9 @@ describe('trailingTradeIndicator', () => {
       getSymbolConfiguration: mockGetSymbolConfiguration,
       getSymbolInfo: mockGetSymbolInfo,
       getOverrideAction: mockGetOverrideAction,
+      getAccountInfo: mockGetAccountInfo,
+      getIndicators: mockGetIndicators,
+      getOpenOrders: mockGetOpenOrders,
       executeDustTransfer: mockExecuteDustTransfer,
       getClosedTrades: mockGetClosedTrades,
       getOrderStats: mockGetOrderStats,
@@ -205,6 +236,9 @@ describe('trailingTradeIndicator', () => {
             symbol: 'BTCUSDT',
             symbolConfiguration: { symbol: 'configuration data' },
             symbolInfo: { some: 'info' },
+            accountInfo: { account: 'information' },
+            indicators: { some: 'value' },
+            openOrders: [{ orderId: 1 }],
             overrideParams: { param: 'overrided' },
             quoteAssetStats: {},
             apiLimit: { start: 10, end: 10 },
