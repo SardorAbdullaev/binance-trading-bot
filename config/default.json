@@ -56,10 +56,6 @@
       "enabled": true,
       "cronTime": "* * * * * *",
       "symbols": [
-        "ADAUSDT",
-        "DOTUSDT",
-        "SOLUSDT",
-        "ETHUSDT",
         "BTCUSDT"
       ],
       "botOptions": {
@@ -69,7 +65,7 @@
         },
         "autoTriggerBuy": {
           "enabled": true,
-          "triggerAfter": 10,
+          "triggerAfter": 100,
           "conditions": {
             "whenLessThanATHRestriction": true,
             "afterDisabledPeriod": true,
