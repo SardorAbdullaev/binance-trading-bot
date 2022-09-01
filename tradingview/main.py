@@ -61,6 +61,9 @@ def modify_summary(result):
                 interim_summary["RECOMMENDATION"] = "SELL"
             else:
                 interim_summary["RECOMMENDATION"] = "BUY"
+        if interim_summary["RECOMMENDATION"] in ["SELL", "BUY"] and interim_summary[interim_summary["RECOMMENDATION"]] > 37:
+            interim_summary["RECOMMENDATION"] = "STRONG_" + interim_summary["RECOMMENDATION"]
+
         r["summary"] = interim_summary
 
 
