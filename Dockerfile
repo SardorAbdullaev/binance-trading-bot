@@ -1,5 +1,7 @@
 # development stage
-FROM node:14-alpine AS dev-stage
+ARG OS_RELEASE="arm32v7/"
+# development stage
+FROM ${OS_RELEASE}node:14-alpine AS dev-stage
 
 RUN apk add --no-cache make gcc g++ py-pip
 
@@ -42,7 +44,7 @@ RUN rm -rf node_modules
 RUN npm install --production
 
 # production stage
-FROM node:14-alpine AS production-stage
+FROM ${OS_RELEASE}node:14-alpine AS production-stage
 
 ARG PACKAGE_VERSION=untagged
 ENV PACKAGE_VERSION=${PACKAGE_VERSION}
@@ -70,3 +72,5 @@ RUN cp /srv/public/index.html /srv/public/index.dev.html && \
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
 CMD [ "npm", "start"]
+
+EXPOSE 80

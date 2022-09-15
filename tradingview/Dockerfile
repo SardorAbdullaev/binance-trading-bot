@@ -1,5 +1,6 @@
 # It must use alpine3.12; otherwise, it won't work in Raspberry Pi 32bit.
-FROM python:3-alpine3.12
+ARG OS_RELEASE="arm32v7/"
+FROM ${OS_RELEASE}python:3-alpine3.12
 
 WORKDIR /app
 
